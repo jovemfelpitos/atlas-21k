@@ -1,0 +1,11 @@
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const context={window:{}};vm.runInNewContext(readFileSync(new URL('../config.js',import.meta.url),'utf8'),context);
+const cfg=context.window.ATLAS_CONFIG;
+const headers={apikey:cfg.supabaseKey};
+const auth=await fetch(cfg.supabaseUrl+'/auth/v1/settings',{headers});
+if(!auth.ok)throw Error('Auth settings: '+auth.status);
+const settings=await auth.json();
+const plans=await fetch(cfg.supabaseUrl+'/rest/v1/atlas_plans?select=id',{headers});
+if(plans.ok)throw Error('Anonymous plan access must be denied.');
+console.log(JSON.stringify({authStatus:auth.status,emailEnabled:settings.external?.email,signupEnabled:!settings.disable_signup,confirmationRequired:!settings.mailer_autoconfirm,anonymousPlansStatus:plans.status},null,2));

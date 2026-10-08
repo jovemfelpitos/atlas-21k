@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {parsePlan,csvRows} from '../importer.js';
+const model=readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8');
+test('complete model preserves two sessions on one date and guide',()=>{const p=parsePlan(model);assert.equal(p.sessions.length,2);assert.equal(p.sessions[0].date,p.sessions[1].date);assert.notEqual(p.sessions[0].id,p.sessions[1].id);assert.equal(p.guide.length,1);assert.equal(p.goal_date,null);});
+test('quoted multiline, commas, escaped quotes and BOM',()=>assert.deepEqual(csvRows('\uFEFFa,b\r\n"linha\ncom, vírgula","diz ""oi"""'),[['a','b'],['linha\ncom, vírgula','diz "oi"']]));
+test('semicolon and decimal comma',()=>assert.deepEqual(csvRows('a;b\n"3,5";x'),[['a','b'],['3,5','x']]));
+test('rejects duplicate sessions',()=>assert.throws(()=>parsePlan(model.replace('sessao-002','sessao-001')),/repetido/));
+test('rejects impossible dates',()=>assert.throws(()=>parsePlan(model.replaceAll('2026-10-08','2026-02-30')),/data/));
+test('rejects missing guide, metadata, malformed CSV, negative distance',()=>{assert.throws(()=>parsePlan(model.split(/\r?\n/).filter(r=>!r.startsWith('guia,')).join('\n')),/guia/);assert.throws(()=>parsePlan(model.replace('registro,','outro,')),/Coluna/);assert.throws(()=>csvRows('a,b\n"unfinished'),/Aspas/);assert.throws(()=>parsePlan(model.replace(',3,25,',',-3,25,')),/Distância/);});

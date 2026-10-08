@@ -1,0 +1,5 @@
+﻿registro,nome,meta_km,meta_min,data_meta,id,data,tipo,km,duracao_min,intensidade,descricao,musculacao,observacoes,tema,orientacao
+plano,Exemplo de formato — não é prescrição,5,40,,,,,,,,,,,,
+treino,,,,,sessao-001,2026-10-08,Exemplo corrida,3,25,Confortável,Sessão ilustrativa; substituir pelo plano revisado.,,Data de exemplo.,,
+treino,,,,,sessao-002,2026-10-08,Exemplo força,0,20,,Segunda sessão no mesmo dia.,Descrição do treino de força,,,
+guia,,,,,,,,,,,,,,Uso do modelo,Este arquivo demonstra o formato de importação. Não é um plano recomendado.

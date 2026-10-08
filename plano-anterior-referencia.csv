@@ -1,0 +1,53 @@
+﻿registro,nome,meta_km,meta_min,data_meta,id,data,tipo,km,duracao_min,intensidade,descricao,musculacao,observacoes,tema,orientacao
+plano,Plano anterior — referência; prova não confirmada,21.1,150,2026-11-15,,,,,,,,,,,
+treino,,,,,legacy-000,2026-10-08,Avaliação,5,,,"5 km em RPE 3–4, conversando. Caminhada liberada.",—,Até 45 min. Não é teste máximo.,,
+treino,,,,,legacy-001,2026-10-09,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-002,2026-10-10,Leve,3,,,RPE 3–4; terreno plano ou esteira.,—,Somente se recuperado dos 5 km.,,
+treino,,,,,legacy-003,2026-10-11,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-004,2026-10-12,Força,0,,,Sem corrida.,A — superior + pernas leve,Sem falha; veja o guia.,,
+treino,,,,,legacy-005,2026-10-13,Leve,4,,,RPE 3–4.,—,"Se avaliação difícil, 25–30 min corrida/caminhada.",,
+treino,,,,,legacy-006,2026-10-14,Força,0,,,Sem corrida.,B — superior + core,Sem falha; veja o guia.,,
+treino,,,,,legacy-007,2026-10-15,Leve,4,,,RPE 3–4.,—,Não perseguir pace.,,
+treino,,,,,legacy-008,2026-10-16,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-009,2026-10-17,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-010,2026-10-18,Longão,6,,,Leve; corrida/caminhada 4 min/1 min se necessário.,—,Teto 50 min. Repetir 5 km se retorno pesado.,,
+treino,,,,,legacy-011,2026-10-19,Força,0,,,Sem corrida.,A — superior + pernas leve,Sem falha; veja o guia.,,
+treino,,,,,legacy-012,2026-10-20,Leve,4,,,RPE 3–4.,—,Sem compensar treinos perdidos.,,
+treino,,,,,legacy-013,2026-10-21,Força,0,,,Sem corrida.,B — superior + core,Sem falha; veja o guia.,,
+treino,,,,,legacy-014,2026-10-22,Leve + acelerações,5,,,"Leve; opcional 4×15 s solto, 75 s caminhando entre.",—,Só sem dor e fadiga; acelerações dentro dos 5 km.,,
+treino,,,,,legacy-015,2026-10-23,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-016,2026-10-24,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-017,2026-10-25,Longão,8,,,RPE 3–4; ritmo constante ou 4/1.,—,Teto 65 min; só avançar se 6 km bem tolerados.,,
+treino,,,,,legacy-018,2026-10-26,Força,0,,,Sem corrida.,A — superior + pernas leve,Sem falha; veja o guia.,,
+treino,,,,,legacy-019,2026-10-27,Leve,5,,,RPE 3–4.,—,Reduzir para 4 km se recuperação lenta.,,
+treino,,,,,legacy-020,2026-10-28,Força,0,,,Sem corrida.,B — superior + core,Sem falha; veja o guia.,,
+treino,,,,,legacy-021,2026-10-29,Ritmo controlado,5,,,"1,5 km leve + 2×6 min perto de 7:00–7:10/km, 3 min leve + completar leve.",—,RPE máximo 5–6; substituir por leve se ritmo exigir esforço alto.,,
+treino,,,,,legacy-022,2026-10-30,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-023,2026-10-31,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-024,2026-11-01,Longão,10,,,RPE 3–4. Testar água e carboidrato.,—,Teto 80 min; sem dor durante e no dia seguinte.,,
+treino,,,,,legacy-025,2026-11-02,Força,0,,,Sem corrida.,A — superior + pernas leve,Sem falha; veja o guia.,,
+treino,,,,,legacy-026,2026-11-03,Leve,5,,,RPE 3–4.,—,Manter leve após longão.,,
+treino,,,,,legacy-027,2026-11-04,Força,0,,,Sem corrida.,B — superior + core,Sem falha; veja o guia.,,
+treino,,,,,legacy-028,2026-11-05,Ritmo controlado,5,,,"1,5 km leve + 2 km a 7:00–7:10/km + 1,5 km leve.",—,Somente se controlado; não testar 5 km forte.,,
+treino,,,,,legacy-029,2026-11-06,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-030,2026-11-07,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-031,2026-11-08,Longão / decisão,12,,,"Leve, 4/1 se útil. Sem acelerar ao final.",—,"Teto 95 min. 12 km é limite, não obrigação. Reavaliar prova.",,
+treino,,,,,legacy-032,2026-11-09,Força reduzida,0,,,Sem corrida.,B com metade das séries,Sem pernas nesta semana.,,
+treino,,,,,legacy-033,2026-11-10,Leve,4,,,RPE 3; confortável.,—,Semana de redução.,,
+treino,,,,,legacy-034,2026-11-11,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-035,2026-11-12,Leve,3,,,RPE 3; sem tiros.,—,Terminar descansado.,,
+treino,,,,,legacy-036,2026-11-13,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-037,2026-11-14,Descanso,0,,,Caminhada opcional 20–30 min leve.,—,Caminhada não é obrigação.,,
+treino,,,,,legacy-038,2026-11-15,Prova condicional,21.1,,,Só participar se evolução e recuperação sustentarem a decisão.,—,"Se critérios falharem, trocar por 5–10 km e adiar meia.",,
+guia,,,,,,,,,,,,,,Referência histórica,Plano anterior de 08/10/2026 a 15/11/2026. A prova não foi confirmada. Não é uma nova prescrição validada; histórico e resultado real dos 5 km não estão disponíveis.
+guia,,,,,,,,,,,,,,Avaliação inicial de 5 km,"Caminhe 5–10 min, corra até 5 km em esforço 3–4/10 e caminhe 5 min ao final. Pode parar antes ou caminhar. Não é um teste máximo. Registre tempo, esforço e recuperação no dia seguinte."
+guia,,,,,,,,,,,,,,Quando reduzir,"Se os 5 km exigirem esforço acima de 5/10, pausas frequentes ou recuperação acima de 48 h, use três sessões semanais de 25–35 min corrida/caminhada e longão de 5–6 km. Não execute a progressão automaticamente."
+guia,,,,,,,,,,,,,,Ritmo e longões,"Leve: esforço 3–4/10, conversando em frases completas. 7:30–8:30/km é só referência; pode ser mais lento. Longões 6 → 8 → 10 → até 12 km só com boa recuperação em 24–48 h. Pode alternar 4 min correndo e 1 min caminhando. Não compense treino perdido."
+guia,,,,,,,,,,,,,,Musculação A,"Supino 2×8–12, remada 2×8–12, agachamento ou leg press 2×8, flexora 2×10, panturrilha 2×12. Cerca de 40–50 min. Deixe 3 repetições em reserva. Use exercícios conhecidos."
+guia,,,,,,,,,,,,,,Musculação B,"Puxada 2×8–12, supino inclinado 2×8–12, elevação lateral 2×12, bíceps e tríceps 1–2×10, prancha 2×30–45 s. Cerca de 35–45 min. Sem falha. Reduza pernas se atrapalharem a corrida. Boxe pausado."
+guia,,,,,,,,,,,,,,"Rua, esteira e tiros","Esteira a 0–1%, sem apoiar nas barras. Caminhe nas subidas e controle descidas. Prefira trajetos planos nos longões. Sem tiros intensos neste bloco. Trechos controlados só se o esforço permitir."
+guia,,,,,,,,,,,,,,Decisão em 8 de novembro,"10–12 km confortáveis ajudam a avaliar, mas não comprovam preparo para 21 km. Se houver dor, fadiga persistente ou longão difícil, adie a meia. 38 dias é um prazo curto; vale revisar com um treinador presencial."
+guia,,,,,,,,,,,,,,Meta de 2h30,Exige aproximadamente 7:07/km contando caminhadas e paradas. Só considerar se os trechos próximos de 7:00–7:10 forem controlados e os longões bem tolerados. Completar com saúde prevalece sobre o relógio.
+guia,,,,,,,,,,,,,,Água e alimentação,"Em treinos acima de 75 min, teste carboidrato começando perto de 30 g/h. Para a prova, 30–60 g/h conforme tolerância e rótulo. Beba conforme sede e calor, sem forçar litros. Refeição habitual rica em carboidrato 2–3 h antes. Não estreie gel na prova."
+guia,,,,,,,,,,,,,,Dor e sinais de alerta,"Dor localizada que aumenta ou altera a passada: pare. Dor persistente merece avaliação. Dor no peito, desmaio ou falta de ar incomum: atendimento urgente."
+guia,,,,,,,,,,,,,,Compartilhar para análise,"Em Evolução, baixe os dados ou compartilhe o resumo e envie nesta conversa. Isso não envia nada automaticamente ao ChatGPT. Os registros ficam na sua conta e só você os acessa."
