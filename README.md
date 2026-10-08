@@ -12,7 +12,9 @@ Aplicação estática sem etapa de build. Calendário e guia funcionam imediatam
 
 ## Publicar no Netlify
 
-Extraia o ZIP. Arraste a pasta `atlas21-mobile` (com `index.html` na raiz) para https://app.netlify.com/drop ou para a área de deploy manual de um projeto existente. Não é necessário comando de build. Para atualizar, envie a pasta novamente ao mesmo projeto. Os registros permanecem no Supabase.
+No Netlify, escolha Add new project → Import an existing project → GitHub → jovemfelpitos/atlas-21k. Use a branch `main`, deixe Build command vazio e Publish directory como `.`. O arquivo `netlify.toml` já define a pasta de publicação. As próximas alterações no GitHub podem ser publicadas automaticamente pelo Netlify. Os registros permanecem no Supabase.
+
+Para publicação manual, baixe os arquivos e arraste a pasta com `index.html` na raiz para https://app.netlify.com/drop.
 
 `schema.sql` e este guia não precisam ser publicados. Você pode removê-los da cópia enviada ao Netlify depois da configuração. Não remova `config.js`, `plan.js`, `app.js`, `style.css` ou `index.html`.
 
