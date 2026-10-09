@@ -5,3 +5,5 @@ dist/
 .netlify/
 *.log
 tools/.seed-reference-plan.sql
+
+.artifacts/

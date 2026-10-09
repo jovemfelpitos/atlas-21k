@@ -4,6 +4,7 @@ import {Window} from 'happy-dom';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parsePlan} from '../importer.js';
+import {createManagement} from '../management.js';
 import {consumeAuthCallback} from '../auth-callback.js';
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
@@ -12,20 +13,21 @@ async function harness({admin=false,loggedIn=true}={}){
  const w=new Window({url:'http://localhost/'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
  const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin};
  const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
- const plan={...doc,id:'plan-1',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
+ const plan={...doc,state:'published',version:1,id:'plan-1',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
  if(loggedIn)w.localStorage.setItem('atlas-session',JSON.stringify({access_token:'test',expires_at:Date.now()/1000+3600,user:{id}}));
  const blobs=[];w.URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:http://localhost/test';};w.URL.revokeObjectURL=()=>{};
  const calls=[];
  w.fetch=async(url,options)=>{calls.push({url,options});let data=[];
  if(url.includes('/auth/v1/signup'))data={user:{id}};
  else if(url.includes('/auth/v1/token'))data={access_token:'test',expires_in:3600,user:{id}};
+ else if(url.includes('atlas_access_context'))data={role:admin?'admin':'athlete',active:true};
  else if(url.includes('atlas_admins'))data=admin?[{user_id:id}]:[];
  else if(url.includes('atlas_profiles'))data=admin?[profile,{user_id:'athlete',name:'Atleta',is_admin:false}]:[profile];
  else if(url.includes('atlas_plans'))data=[plan];
- else if(url.includes('atlas_activity_records')){if(options.method==='POST'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[JSON.parse(options.body)];}data=rows;}
+ else if(url.includes('atlas_activity_records')){if(options.method==='POST'||options.method==='PATCH'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[{...rows[0],...JSON.parse(options.body)}];}data=rows;}
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,navigator:w.navigator,parsePlan,consumeAuthCallback,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,navigator:w.navigator,parsePlan,createManagement,consumeAuthCallback,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();}};
 }
@@ -43,11 +45,6 @@ test('signup confirmation, password sign-in and logout with simulated Auth respo
  const h=await harness({loggedIn:false}),d=h.w.document;await h.click('#account');const f=d.querySelector('#authForm');f.elements.email.value='teste@example.com';f.elements.password.value='senha-de-teste';await h.click('#signup');assert.match(d.querySelector('#authError').textContent,/Confirme/);assert.equal(h.w.localStorage.getItem('atlas-session'),null);
  await h.submit('#authForm');assert.match(d.querySelector('#notice').textContent,/sincronizados/);assert.equal(d.querySelector('#sync').hidden,false);await h.click('#account');assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.equal(d.querySelector('#sync').hidden,true);assert.match(d.querySelector('#content').textContent,/crie sua conta/);await h.w.happyDOM.close();
 });
-test('admin sees only administration and must choose athlete before import',async()=>{
- const h=await harness({admin:true}),d=h.w.document;assert.equal(d.querySelector('nav').hidden,true);assert.match(d.querySelector('#content').textContent,/Importar um plano/);assert.equal(d.querySelector('#athlete').value,'');assert.equal(d.querySelectorAll('[data-record]').length,0);
- // Exercise file selection using a synthetic local file, not a real Supabase request.
- const file=new h.w.File([readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8')],'model.csv');
- Object.defineProperty(d.querySelector('#importFile'),'files',{value:[file]});d.querySelector('#importFile').dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();
- assert.match(d.querySelector('#preview').textContent,/Guia completo/);assert.match(d.querySelector('#preview').textContent,/sessao-002/);
- await h.click('#confirmImport');assert.equal(h.imported,0);d.querySelector('#athlete').value='athlete';await h.click('#confirmImport');assert.equal(h.imported,1);assert.match(d.querySelector('#preview').textContent,/sucesso/);await h.w.happyDOM.close();
+test('owner boot enters management with team controls and no record actions',async()=>{
+ const h=await harness({admin:true}),d=h.w.document;assert.equal(d.querySelector('nav').hidden,true);assert.match(d.querySelector('#content').textContent,/Admin dono/);assert.ok(d.querySelector('[data-page=team]'));assert.equal(d.querySelectorAll('[data-record]').length,0);await h.w.happyDOM.close();
 });

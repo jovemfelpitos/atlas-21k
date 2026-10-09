@@ -1,7 +1,7 @@
 import { mkdir, copyFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const files = ['index.html', 'style.css', 'app.js', 'config.js', 'importer.js', 'auth-callback.js', 'legacy-plan.js', 'legacy-guide.js', 'modelo-plano.csv', 'plano-anterior-referencia.csv', 'IMPORTACAO.md'];
+const files = ['index.html', 'style.css', 'management.css', 'app.js', 'management.js', 'plan-editor.js', 'config.js', 'importer.js', 'auth-callback.js', 'legacy-plan.js', 'legacy-guide.js', 'modelo-plano.csv', 'plano-anterior-referencia.csv', 'IMPORTACAO.md', 'GESTAO.md'];
 const output = resolve('dist');
 await mkdir(output, { recursive: true });
 const unexpected = (await readdir(output)).filter(name => !files.includes(name));

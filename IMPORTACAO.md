@@ -10,7 +10,7 @@ Mantenha todas as 16 colunas do modelo. Use exatamente uma linha `registro=plano
 - Guia: tema e orientacao obrigatórios. Uma linha por tema.
 - Demais campos da linha ficam vazios. Texto com delimitador, aspas ou quebra de linha precisa estar entre aspas; aspas internas são duplicadas. Prefira ponto decimal.
 
-Limites: 2 MB por arquivo, 1000 sessões por plano. A prévia exibe todas as sessões, metas e guia. Escolha obrigatoriamente um atleta; só então confirme. Cada confirmação cria um novo plano, sem substituir anteriores. Não confirme duas vezes o mesmo arquivo se não quiser dois planos.
+Limites: 2 MB por arquivo, 1000 sessões por plano. A prévia exibe todas as sessões, metas e guia. Escolha obrigatoriamente um atleta antes de carregar o arquivo. Confira a prévia em lista ou calendário e edite o conteúdo se necessário. Salve como rascunho e, depois, use Revisar publicação para confirmar o destinatário, todas as sessões e o guia. O atleta só verá o plano após a publicação. Criar revisão de um plano publicado gera uma nova versão e arquiva a anterior, preservando seus registros. Duplicar cria um rascunho independente para um atleta autorizado.
 
 ## Prompt para copiar no GPT
 
