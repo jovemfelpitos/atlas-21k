@@ -13,7 +13,7 @@ async function harness({admin=false,loggedIn=true}={}){
  const w=new Window({url:'http://localhost/'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
  const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin};
  const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
- const plan={...doc,state:'published',version:1,id:'plan-1',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
+ const plan={...doc,state:'published',version:1,id:'plan-1',published_by:'coach-private-id',source_draft_id:'draft-private-id',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
  if(loggedIn)w.localStorage.setItem('atlas-session',JSON.stringify({access_token:'test',expires_at:Date.now()/1000+3600,user:{id}}));
  const blobs=[];w.URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:http://localhost/test';};w.URL.revokeObjectURL=()=>{};
  const calls=[];
@@ -37,7 +37,7 @@ test('athlete form keeps failed fields, saves and edits exact session, exports n
  h.fail=false;await h.submit('#recordForm');assert.equal(h.rows[0].session_id,'sessao-001');assert.equal(h.rows[0].plan_id,'plan-1');assert.equal(h.rows[0].user_id,'athlete');
  await h.click('[data-record="sessao-001"]');assert.equal(f.elements.km.value,'3.25');f.elements.recovery.value='Normal';await h.submit('#recordForm');assert.equal(h.rows[0].recovery,'Normal');
  await h.click('[data-view=progress]');assert.match(d.querySelector('#content').textContent,/3.3/);assert.equal(d.querySelectorAll('[data-record]').length,1);
- await h.click('#export');const exported=JSON.parse(await h.blobs[0].text());assert.equal(exported.plans.length,1);assert.equal(exported.records.length,1);assert.equal(exported.plans[0].guide.length,1);assert.ok(!JSON.stringify(exported).includes('user_id'));assert.ok(!JSON.stringify(exported).includes('access_token'));
+ await h.click('#export');const exported=JSON.parse(await h.blobs[0].text());assert.equal(exported.plans.length,1);assert.equal(exported.records.length,1);assert.equal(exported.plans[0].guide.length,1);assert.ok(!JSON.stringify(exported).includes('user_id'));assert.ok(!JSON.stringify(exported).includes('access_token'));assert.ok(!JSON.stringify(exported).includes('coach-private-id'));assert.ok(!JSON.stringify(exported).includes('draft-private-id'));
  await h.click('[data-view=profile]');await h.submit('#profileForm');assert.match(d.querySelector('#profileError').textContent,/salvo/);
  assert.ok(h.calls.some(c=>c.options.method==='PATCH'));await h.w.happyDOM.close();
 });

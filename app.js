@@ -49,7 +49,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(b.dataset.view){view=b.dataset.view;render();}if(b.dataset.close)$('#'+b.dataset.close).close();if(b.dataset.record)openRecord(b.dataset.record);
  if(b.id==='login')$('#account').click();if(b.id==='reload'||b.id==='sync'){if(management?.busy)return;if(management?.dirty){notice('Salve o rascunho ou volte aos planos antes de sincronizar.');return;}await load();}
  if(b.id==='demo'){demo=true;profile=null;plans=[{id:'legacy',name:'Plano anterior · referência, prova não confirmada',goal_km:21.1,goal_minutes:150,goal_date:'2026-11-15',guide:window.ATLAS_LEGACY_GUIDE,sessions:window.ATLAS_PLAN.map((s,i)=>({id:'legacy-'+i,date:s.date,type:s.type,km:s.km,description:s.execution,gym:s.gym,notes:s.condition}))}];active='legacy';records=[];notice('DEMONSTRAÇÃO — dados temporários em memória, sem sincronização. Prova não confirmada.');render();}
- if(b.id==='export'){if(!demo&&!loaded)return;download('atlas-run-dados.json',JSON.stringify({app:'Atlas Run',demo,exported_at:new Date().toISOString(),plans:plans.map(({user_id,atlas_sessions,...p})=>({...p,sessions:p.sessions.map(({user_id,plan_id,...s})=>s)})),records:records.map(({user_id,...r})=>r)},null,2));}
+ if(b.id==='export'){if(!demo&&!loaded)return;download('atlas-run-dados.json',JSON.stringify({app:'Atlas Run',demo,exported_at:new Date().toISOString(),plans:plans.map(({user_id,published_by,source_draft_id,atlas_sessions,...p})=>({...p,sessions:p.sessions.map(({user_id,plan_id,...s})=>s)})),records:records.map(({user_id,...r})=>r)},null,2));}
 
 });
 document.addEventListener('change',e=>{if(e.target.id==='planSelect'){active=e.target.value;render();}});
