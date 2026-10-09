@@ -1,5 +1,6 @@
 import {parsePlan} from './importer.js';
 import {blankPlan, newSession, prescription, validatePlanDocument} from './plan-editor.js';
+import {readRows, monitoringRows, summaryHTML, commentsHTML, amount, sessionKey} from './monitoring.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
@@ -9,7 +10,8 @@ const field = (label, key, value, type = 'text', extras = '') => `<label>${esc(l
 const area = (label, key, value, max) => `<label>${esc(label)}<textarea data-field="${key}" rows="3" maxlength="${max}">${esc(value)}</textarea></label>`;
 
 export function createManagement({root, role, enabled = true, userId, request, notice, saveProfile}) {
- let people = [], coaches = [], links = [], plans = [], drafts = [], events = [];
+ let people = [], coaches = [], links = [], plans = [], drafts = [], events = [], records = [], comments = [];
+ let monitor = {athlete:'',plan:'',from:'',to:'',state:'all',history:false}, inspected = null, commentDraft = {id:null,text:''};
  let page = 'overview', selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
  let dirty = false, busy = false, preview = 'list', pending = null;
  const owner = role === 'admin';
@@ -24,10 +26,11 @@ export function createManagement({root, role, enabled = true, userId, request, n
 
  async function load() {
   const result = await Promise.all([
-   request('/rest/v1/atlas_profiles?select=*&order=name'), request('/rest/v1/atlas_coaches?select=*'), request('/rest/v1/atlas_coach_athletes?select=*'),
-   request('/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc'), request('/rest/v1/atlas_plan_drafts?select=*&order=updated_at.desc'), request('/rest/v1/atlas_plan_events?select=*&order=created_at.desc')
-  ]);
-  [people, coaches, links, plans, drafts, events] = result;
+   '/rest/v1/atlas_profiles?select=*&order=name,user_id', '/rest/v1/atlas_coaches?select=*&order=user_id', '/rest/v1/atlas_coach_athletes?select=*&order=coach_id,athlete_id',
+   '/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id', '/rest/v1/atlas_plan_drafts?select=*&order=updated_at.desc,id', '/rest/v1/atlas_plan_events?select=*&order=created_at.desc,id',
+   '/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id', '/rest/v1/atlas_session_comments?select=*&order=created_at,id'
+  ].map(path => readRows(request,path)));
+  [people, coaches, links, plans, drafts, events, records, comments] = result;
  }
 
  function previewPlan(document) {
@@ -43,7 +46,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   const open = drafts.filter(d => d.state === 'draft');
   return `<h2>${owner ? 'Admin dono' : 'Área do treinador'}</h2><p>${owner ? 'Gerencie sua equipe, os atletas e os planos.' : 'Crie e publique planos para os atletas vinculados a você.'}</p>
    <div class="metrics"><div class="metric"><strong>${athletes().length}</strong><span>atletas ${owner ? 'cadastrados' : 'vinculados'}</span></div><div class="metric"><strong>${open.length}</strong><span>rascunhos</span></div><div class="metric"><strong>${plans.filter(p => p.state === 'published').length}</strong><span>planos publicados</span></div></div>
-   <div class="actions"><button data-page="athletes">Ver atletas</button><button data-page="plans">Gerenciar planos</button></div><h3>Rascunhos recentes</h3>${open.slice(0, 5).map(draftCard).join('') || '<p>Nenhum rascunho. Escolha um atleta para começar.</p>'}`;
+   <div class="actions"><button data-page="athletes">Ver atletas</button><button data-page="plans">Gerenciar planos</button><button data-page="monitoring">Acompanhar atividades</button></div><h3>Rascunhos recentes</h3>${open.slice(0, 5).map(draftCard).join('') || '<p>Nenhum rascunho. Escolha um atleta para começar.</p>'}`;
  }
  function athleteList() {
   const list = athletes().filter(p => p.name.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')));
@@ -57,7 +60,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (!person) return '<p>Atleta indisponível. Atualize os dados.</p>';
   const week = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   return `<button data-page="athletes">← Atletas</button><h2>${esc(person.name)}</h2><p>Dias disponíveis: ${(person.available_days || []).map(d => week[d]).join(', ') || 'não informados'}</p><p>Preferências não alteram datas de planos publicados.</p>
-   <div class="actions"><button data-new="${esc(selectedAthlete)}" class="primary">Criar plano</button><button data-import="${esc(selectedAthlete)}">Importar CSV</button></div>
+   <div class="actions"><button data-new="${esc(selectedAthlete)}" class="primary">Criar plano</button><button data-import="${esc(selectedAthlete)}">Importar CSV</button><button data-monitor-athlete="${esc(selectedAthlete)}">Acompanhar atividades</button></div>
    ${owner ? `<h3>Treinadores responsáveis</h3>${coaches.filter(c => c.active).map(c => {const link = links.find(l => l.coach_id === c.user_id && l.athlete_id === selectedAthlete); return `<div class="team-row"><span>${esc(name(c.user_id))}</span><button data-link-coach="${esc(c.user_id)}" data-link-athlete="${esc(selectedAthlete)}" data-link-active="${!link?.active}">${link?.active ? 'Revogar vínculo' : 'Vincular treinador'}</button></div>`;}).join('') || '<p>Cadastre um treinador na página Equipe.</p>'}` : ''}
    <h3>Planos e histórico</h3>${plans.filter(p => p.user_id === selectedAthlete).map(planCard).join('') || '<p>Sem planos publicados.</p>'}<h3>Rascunhos</h3>${drafts.filter(d => d.athlete_id === selectedAthlete && d.state === 'draft').map(draftCard).join('') || '<p>Sem rascunhos.</p>'}`;
  }
@@ -71,7 +74,28 @@ export function createManagement({root, role, enabled = true, userId, request, n
   const p = plans.find(p => p.id === detail);
   if (!p) return '<p>Plano indisponível.</p>';
   return `<button data-page="plans">← Planos</button><h2>${esc(p.name)}</h2><p>${esc(name(p.user_id))} · ${status(p.state)} · versão ${p.version}</p><div class="actions">${p.state === 'published' ? `<button data-revise="${esc(p.id)}" class="primary">Criar revisão</button><button data-archive="${esc(p.id)}">Arquivar plano</button>` : ''}<button data-copy-plan="${esc(p.id)}">Duplicar para outro atleta</button></div>
-   <p>Revisões geram uma nova versão. As sessões e atividades anteriores permanecem no histórico.</p>${previewPlan(prescription(p))}<h3>Histórico de publicação</h3>${p.previous_plan_id ? `<button data-plan="${esc(p.previous_plan_id)}">Abrir versão anterior</button>` : ''}${plans.filter(next => next.previous_plan_id === p.id).map(next => `<button data-plan="${esc(next.id)}">Abrir versão ${next.version}</button>`).join('')}<ul>${events.filter(e => e.plan_id === p.id).map(e => `<li>${({published: 'Publicado', archived: 'Arquivado', replaced: 'Substituído por nova versão'})[e.event]} · ${esc(name(e.actor_id))} · ${new Date(e.created_at).toLocaleString('pt-BR')}</li>`).join('') || '<li>Plano anterior à implementação do histórico de eventos.</li>'}</ul>`;
+   <button data-monitor-plan="${esc(p.id)}">Acompanhar este plano</button><p>Revisões geram uma nova versão. As sessões e atividades anteriores permanecem no histórico.</p>${previewPlan(prescription(p))}<h3>Histórico de publicação</h3>${p.previous_plan_id ? `<button data-plan="${esc(p.previous_plan_id)}">Abrir versão anterior</button>` : ''}${plans.filter(next => next.previous_plan_id === p.id).map(next => `<button data-plan="${esc(next.id)}">Abrir versão ${next.version}</button>`).join('')}<ul>${events.filter(e => e.plan_id === p.id).map(e => `<li>${({published: 'Publicado', archived: 'Arquivado', replaced: 'Substituído por nova versão'})[e.event]} · ${esc(name(e.actor_id))} · ${new Date(e.created_at).toLocaleString('pt-BR')}</li>`).join('') || '<li>Plano anterior à implementação do histórico de eventos.</li>'}</ul>`;
+ }
+ const sessionComments = row => comments.filter(c => sessionKey(c.user_id,c.plan_id,c.session_id) === row.key);
+ function monitoringPage() {
+  const rows = monitoringRows(plans,records,monitor), available = plans.filter(p=>!monitor.athlete || p.user_id===monitor.athlete);
+  return `<h2>Acompanhamento</h2><p>Compare o treino prescrito com o relato do atleta e deixe comentários na sessão.</p><form id="monitorFilters" class="form-grid">
+   <label>Atleta<select name="athlete"><option value="">Todos os atletas</option>${options(monitor.athlete).replace('<option value="">Selecione um atleta</option>','')}</select></label>
+   <label>Plano<select name="plan"><option value="">Todos os planos publicados</option>${available.map(p=>`<option value="${esc(p.id)}" ${monitor.plan===p.id?'selected':''}>${esc(p.name)} · v${p.version}${p.state==='archived'?' · histórico':''}</option>`).join('')}</select></label>
+   <label>De<input name="from" type="date" value="${esc(monitor.from)}"></label><label>Até<input name="to" type="date" value="${esc(monitor.to)}"></label>
+   <label>Situação<select name="state">${[['all','Todas'],['missing','Sem registro em data passada'],['today','Pendente hoje'],['scheduled','Agendado'],['feito','Feito'],['adaptado','Adaptado'],['não feito','Não feito']].map(([v,l])=>`<option value="${v}" ${monitor.state===v?'selected':''}>${l}</option>`).join('')}</select></label>
+   <label class="checkbox-label"><input name="history" type="checkbox" ${monitor.history?'checked':''}> Incluir versões arquivadas nos totais</label><button class="primary">Aplicar filtros</button><button type="button" id="clearMonitor">Limpar filtros</button><p id="filterError" class="error" role="alert"></p></form>
+   <p class="muted">Versões arquivadas ficam fora dos totais por padrão. Selecione um plano histórico ou marque a opção para consultá-las; cada versão mantém seus próprios registros.</p>
+   ${summaryHTML(rows)}<h3>Sessões · ${rows.length}</h3>${rows.map((row,i)=>`<article class="card"><span class="tag">${esc(row.label)}</span><h3>${date(row.session.date)} · ${esc(row.session.type)}</h3><p>${esc(name(row.plan.user_id))} · ${esc(row.plan.name)} · v${row.plan.version}${row.plan.state==='archived'?' · histórico':''}</p><div class="comparison"><div><strong>Prescrito</strong><p>${esc(amount(row.session.km,'km'))} · ${esc(amount(row.session.minutes,'min'))}</p></div><div><strong>Relatado pelo atleta</strong><p>${row.record?`${esc(amount(row.record.km,'km'))} · ${esc(amount(row.record.minutes,'min'))}`:'Sem relato de execução'}</p></div></div><button data-inspect="${i}">Ver relato e comentários (${sessionComments(row).length})</button></article>`).join('')}`;
+ }
+ function inspectedRow() {return monitoringRows(plans,records,{history:true}).find(r=>r.key===inspected);}
+ function activityPage() {
+  const row = inspectedRow(); if (!row) return '<button data-page="monitoring">← Acompanhamento</button><p>Sessão indisponível. Sincronize os dados.</p>';
+  const s = row.session, r = row.record;
+  return `<button data-page="monitoring">← Acompanhamento</button><h2>${date(s.date)} · ${esc(s.type)}</h2><p>${esc(name(row.plan.user_id))} · ${esc(row.plan.name)} · versão ${row.plan.version}</p><span class="tag">${esc(row.label)}</span>
+   <section class="card"><h3>Prescrição</h3><p>${esc(amount(s.km,'km'))} · ${esc(amount(s.minutes,'min'))} · ${esc(s.intensity)}</p><p class="preserve-lines">${esc(s.description)}</p>${s.gym?`<p>Musculação: ${esc(s.gym)}</p>`:''}${s.notes?`<p>Observações: ${esc(s.notes)}</p>`:''}</section>
+   <section class="card"><h3>Relato do atleta · somente leitura</h3>${r?`<p>${esc(r.status)} · ${esc(amount(r.km,'km'))} · ${esc(amount(r.minutes,'min'))}</p><p>Esforço: ${r.effort??'não informado'}/10 · Dor: ${r.pain??'não informada'}/10</p><p>Recuperação: ${esc(r.recovery||'Não informada')}</p><p class="preserve-lines">${esc(r.notes||'Sem observações')}</p><small>Atualizado em ${esc(new Date(r.updated_at).toLocaleString('pt-BR'))}</small>`:'<p>O atleta ainda não registrou esta sessão.</p>'}</section>
+   ${commentsHTML(sessionComments(row))}<form id="commentForm"><label>Adicionar comentário para o atleta<textarea name="body" rows="4" maxlength="3000" required>${esc(commentDraft.text)}</textarea></label><p class="muted">O atleta verá este comentário. Ele será mantido no histórico com seu nome e data, separado do relato de execução.</p><p id="commentError" class="error" role="alert"></p><button class="primary">Enviar comentário</button></form>`;
  }
  function importPage() {return `<h2>Importar um plano</h2><p>O arquivo será revisado antes de salvar como rascunho. O atleta recebe o conteúdo depois da publicação.</p><a href="modelo-plano.csv" download>Baixar modelo CSV</a> · <a href="IMPORTACAO.md" target="_blank" rel="noopener">Formato e prompt GPT</a><label>Atleta<select id="athlete">${options(selectedAthlete)}</select></label><label>CSV UTF-8 (até 2 MB)<input id="importFile" type="file" accept=".csv,text/csv"></label><p id="importError" role="alert"></p>`;}
  function editorPage() {
@@ -95,7 +119,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Perfil: ${owner ? 'admin dono' : 'treinador'}. Para registrar atividades pessoais, use sua conta de atleta.</p>`;
  }
  function render() {
-  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ...(owner ? [['team', 'Equipe']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
+  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Equipe']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key==='monitoring') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
  }
@@ -113,7 +137,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   pending = action; root.querySelector('#managementDialog').showModal();
  }
  function navigate(action) {
-  if (dirty) dialog('Descartar alterações não salvas?', '<p>O rascunho salvo continuará disponível. As alterações desta tela serão descartadas.</p>', 'Descartar e continuar', async () => {dirty = false; action();});
+  if (dirty) dialog('Descartar alterações não salvas?', '<p>O conteúdo já salvo continuará disponível. As alterações desta tela serão descartadas.</p>', 'Descartar e continuar', async () => {dirty = false; commentDraft={id:null,text:''}; action();});
   else action();
  }
  function start(athlete, document = blankPlan(), base = null) {editor = {id: null, revision: null, athlete_id: athlete, base_plan_id: base, document: copy(document)}; dirty = true; page = 'editor'; render();}
@@ -131,16 +155,18 @@ export function createManagement({root, role, enabled = true, userId, request, n
  }
  async function command(action) {
   if (busy) return;
-  busy = true; const buttons = [...root.querySelectorAll('button')]; const prior = buttons.map(b => b.disabled); buttons.forEach(b => b.disabled = true);
-  try {await action();} catch (error) {const el = root.querySelector('#actionError') || root.querySelector('#editorError') || root.querySelector('#importError'); if (el) el.textContent = error.message; else message(error.message, true);}
+  busy = true; const buttons = [...root.querySelectorAll('button,input,textarea,select')]; const prior = buttons.map(b => b.disabled); buttons.forEach(b => b.disabled = true);
+  try {await action();} catch (error) {const el = root.querySelector('#managementDialog[open] #actionError') || root.querySelector('#editorError') || root.querySelector('#importError') || root.querySelector('#commentError') || root.querySelector('#filterError'); if (el) el.textContent = error.message; else message(error.message, true);}
   finally {busy = false; buttons.forEach((b, i) => {if (b.isConnected) b.disabled = prior[i];}); root.querySelectorAll('.management-nav button').forEach(b => b.disabled = false);}
  }
  listen('input', e => {
   if (e.target.closest('#planEditor')) markDirty();
+  if (e.target.closest('#commentForm')) {commentDraft.text=e.target.value; commentDraft.id=null; dirty=!!commentDraft.text.trim();}
   if (e.target.id === 'athleteSearch') {search = e.target.value; const value = search; const selection = e.target.selectionStart; render(); const input = root.querySelector('#athleteSearch'); input.value = value; input.focus(); input.setSelectionRange(selection, selection);}
  });
  listen('change', async e => {
   if (busy) return;
+  if (e.target.closest('#monitorFilters') && e.target.name==='athlete') {const id=e.target.value;root.querySelector('#monitorFilters select[name=plan]').innerHTML='<option value="">Todos os planos publicados</option>'+plans.filter(p=>!id||p.user_id===id).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · v'+p.version+(p.state==='archived'?' · histórico':'')+'</option>').join('');}
   if (e.target.id === 'filterAthlete') {selectedAthlete = e.target.value; render();}
   if (e.target.id === 'filterState') {filter = e.target.value; render();}
   if (e.target.id === 'athlete') selectedAthlete = e.target.value;
@@ -150,10 +176,12 @@ export function createManagement({root, role, enabled = true, userId, request, n
   }
  });
  listen('submit', async e => {
-  if (!['planEditor', 'coachForm', 'staffProfile'].includes(e.target.id)) return;
+  if (!['planEditor', 'coachForm', 'staffProfile','monitorFilters','commentForm'].includes(e.target.id)) return;
   e.preventDefault();
   await command(async () => {
    if (e.target.id === 'planEditor') await save();
+   if (e.target.id === 'monitorFilters') {const f=e.target.elements; if(f.from.value&&f.to.value&&f.from.value>f.to.value) throw Error('A data inicial deve ser anterior ou igual à final.'); monitor={athlete:f.athlete.value,plan:f.plan.value,from:f.from.value,to:f.to.value,state:f.state.value,history:f.history.checked}; if(monitor.plan&&!plans.some(p=>p.id===monitor.plan&&(!monitor.athlete||p.user_id===monitor.athlete))) monitor.plan=''; render();}
+   if (e.target.id === 'commentForm') {const row=inspectedRow(); if(!row)throw Error('Sessão indisponível.'); const text=commentDraft.text.trim(); if(!text||text.length>3000)throw Error('Escreva um comentário de até 3000 caracteres.'); commentDraft.id??=crypto.randomUUID(); const saved=await rpc('atlas_add_session_comment',{comment_id:commentDraft.id,athlete:row.plan.user_id,plan:row.plan.id,session:row.session.id,comment_text:text}); comments=comments.filter(c=>c.id!==saved.id).concat(saved).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));commentDraft={id:null,text:''};dirty=false;render();message('Comentário salvo e disponível para o atleta.');}
    if (e.target.id === 'coachForm') {const id = e.target.elements.coach.value; if (!id) throw Error('Selecione uma conta.'); await post('/rest/v1/atlas_coaches', {user_id: id}); await refresh(); message('Acesso de treinador concedido. Vincule os atletas na página Atletas.');}
    if (e.target.id === 'staffProfile') {const value = e.target.elements.name.value.trim(); if (!value) throw Error('Preencha o nome.'); await saveProfile(value); await refresh(); message('Perfil salvo.');}
   });
@@ -164,6 +192,9 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (b.id === 'confirmAction') {const action = pending; await command(async () => {await action?.(); const modal = root.querySelector('#managementDialog'); if (modal?.open) modal.close(); pending = null;}); return;}
   if (b.dataset.page) {navigate(() => {page = b.dataset.page; if (page === 'plans') selectedAthlete = ''; editor = null; render();}); return;}
   if (b.dataset.athlete) {navigate(() => {selectedAthlete = b.dataset.athlete; page = 'athlete'; render();}); return;}
+  if (b.dataset.monitorAthlete || b.dataset.monitorPlan) {navigate(()=>{const p=plans.find(p=>p.id===b.dataset.monitorPlan); monitor={athlete:p?.user_id||b.dataset.monitorAthlete,plan:p?.id||'',from:'',to:'',state:'all',history:false};page='monitoring';render();});return;}
+  if (b.id==='clearMonitor') {monitor={athlete:'',plan:'',from:'',to:'',state:'all',history:false};render();return;}
+  if (b.dataset.inspect!==undefined) {const row=monitoringRows(plans,records,monitor)[Number(b.dataset.inspect)];if(row){inspected=row.key;commentDraft={id:null,text:''};page='activity';render();}return;}
   if (b.id === 'newPlan' || b.dataset.new) {navigate(() => b.dataset.new ? start(b.dataset.new) : selectAthlete(id => start(id))); return;}
   if (b.id === 'importPlan' || b.dataset.import) {navigate(() => {selectedAthlete = b.dataset.import || ''; page = 'import'; editor = null; render();}); return;}
   if (b.dataset.draft) {navigate(() => {editor = copy(drafts.find(d => d.id === b.dataset.draft)); page = 'editor'; dirty = false; render();}); return;}

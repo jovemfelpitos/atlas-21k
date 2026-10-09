@@ -27,4 +27,14 @@ Rascunhos são visíveis somente à gestão autorizada. Publicação sempre usa 
 
 Entre com sua conta, sincronize e escolha seu plano. O plano publicado mais recente aparece primeiro, com versões arquivadas identificadas como histórico. Registre cada atividade na sessão correspondente. Perfil e relato de execução pertencem à sua conta; o treinador não edita esses registros.
 
-O acompanhamento dos relatos pelo treinador e os convites para novos usuários serão adicionados em etapas posteriores.
+## Acompanhamento — dono e treinador
+
+Abra **Acompanhamento**, escolha atleta/plano, período e situação e clique em **Aplicar filtros**. Também pode abrir pelo detalhe do atleta ou do plano. O resumo compara valores prescritos e realizados por semana; valores não informados permanecem vazios. **Sem registro em data passada** indica ausência de relato em uma sessão anterior a hoje. Pendências de hoje, futuras e atividades marcadas como **não feito** têm situações próprias.
+
+Versões arquivadas ficam fora dos totais por padrão. Escolha um plano histórico ou marque **Incluir versões arquivadas nos totais** para consultá-las. Registros e comentários permanecem ligados à versão original.
+
+Clique em **Ver relato e comentários** para consultar esforço, dor, recuperação e observações. O relato é somente leitura para a equipe. Escreva em **Adicionar comentário para o atleta** e envie. O atleta verá o comentário ao sincronizar; nome do autor, papel e data são registrados pelo banco. Comentários ficam no histórico; para corrigir uma mensagem, acrescente outra. Falha de rede mantém o texto e permite tentar novamente sem duplicar a mesma mensagem. Salve ou descarte o texto antes de sair/sincronizar.
+
+O atleta vê comentários em **Treino**, **Calendário** e **Evolução**, inclusive quando a sessão ainda não tem relato, e pode exportá-los junto com seus dados. Seus registros só podem ser editados por ele; o admin dono e treinadores ativos vinculados podem consultá-los. O resumo organiza as informações relatadas, sem avaliar clinicamente ou mudar a prescrição.
+
+Convites e SMTP para novos usuários ficam no ciclo de expansão.
