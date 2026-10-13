@@ -32,6 +32,17 @@ export function createManagement({root, role, enabled = true, userId, request, n
    '/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id', '/rest/v1/atlas_session_comments?select=*&order=created_at,id'
   ].map(path => readRows(request,path)));
   [people, coaches, links, plans, drafts, events, records, comments] = result;
+  // RLS permits a coach to read their own athlete data too. This workspace shows
+  // only managed athletes; personal plans belong in the separate athlete area.
+  if (!owner) {
+   const managed = new Set(links.filter(l => l.coach_id === userId && l.active).map(l => l.athlete_id));
+   people = people.filter(p => p.user_id === userId || managed.has(p.user_id));
+   plans = plans.filter(p => managed.has(p.user_id));
+   drafts = drafts.filter(d => managed.has(d.athlete_id));
+   events = events.filter(e => plans.some(p => p.id === e.plan_id));
+   records = records.filter(r => managed.has(r.user_id));
+   comments = comments.filter(c => managed.has(c.user_id));
+  }
   if (owner) await loadUsers();
  }
  async function loadUsers() {const data=await rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});users=data.users;usersTotal=data.total;}

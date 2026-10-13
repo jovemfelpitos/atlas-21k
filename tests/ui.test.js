@@ -72,7 +72,7 @@ test('athlete enables an empty coach area without receiving arbitrary athletes',
  const h=await harness(),d=h.w.document;
  try{
   await h.click('[data-view=profile]');await h.click('[data-enable-coach]');assert.equal(d.querySelector('#areaSelect').value,'coach');assert.ok(h.calls.some(c=>c.url.includes('atlas_enable_coach')));
-  await h.click('[data-page=plans]');await h.click('#newPlan');const destination=d.querySelector('#destination');assert.equal(destination.options.length,1);await h.click('[data-dismiss]');
+  await h.click('[data-page=plans]');assert.equal(d.querySelectorAll('[data-plan]').length,0);await h.click('#newPlan');const destination=d.querySelector('#destination');assert.equal(destination.options.length,1);await h.click('[data-dismiss]');
   // Creating a draft through a linked athlete is covered in the management suite.
   // Here a newly activated coach has no assigned athletes, even with their own plan.
   assert.equal(d.querySelector('[data-page=team]'),null);
