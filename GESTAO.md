@@ -1,13 +1,17 @@
 # Gestão de treinos no Atlas Run
 
-Atleta, treinador e admin dono usam contas separadas. A área correta aparece automaticamente depois de entrar. Ao mudar permissões, sincronize os dados ou entre novamente.
+Uma conta pode usar as áreas **Atleta** e **Treinador**, com o mesmo e-mail, senha e histórico pessoal. Use **Trocar área**, acima da navegação, ou os botões de áreas no Perfil. A área **Admin dono** aparece somente para contas autorizadas. Contas já existentes com e-mails diferentes continuam separadas. Ao mudar permissões, sincronize os dados.
 
 ## Para o dono
 
-1. Abra **Equipe** para conceder acesso de treinador a uma conta já cadastrada. A conta deve ter entrado uma vez no app e não pode ter planos de atleta.
+1. Abra **Usuários**, busque por nome/e-mail e clique em **Ativar treinador** na conta desejada. Ela pode ter planos e registros de atleta: o histórico permanece. O e-mail precisa estar confirmado. Contas sem perfil aparecem com **Regularizar perfil**; não é necessário criar outro login.
 2. Abra **Atletas**, busque pelo nome e escolha **Abrir atleta**.
 3. Em **Treinadores responsáveis**, vincule o treinador. Ele poderá gerenciar somente os atletas vinculados.
-4. Revogue o vínculo para retirar acesso a um atleta específico. Desative o treinador em **Equipe** para retirar todo o acesso de gestão, preservando o histórico.
+4. Revogue o vínculo para retirar acesso a um atleta específico. Use **Desativar gestão** em **Usuários** para retirar o acesso de treinador, preservando sua área de atleta e o histórico. Só o dono reativa um acesso desativado. Uma pessoa que também é treinador pode receber planos de outro treinador.
+
+## Para ativar sua segunda área
+
+No **Perfil**, abra **Áreas da conta** e selecione **Ativar área de treinador**. A conta confirmada ganha uma área de gestão sem atletas vinculados; o dono precisa conceder os vínculos. Volte para **Atleta** em Trocar área para consultar e registrar seus treinos pessoais. Ativar treinador não concede admin nem acesso automático a planos de terceiros. O app guarda a última área escolhida; uma área desativada deixa de ser opção após sincronizar.
 
 ## Para dono e treinador
 
@@ -37,4 +41,4 @@ Clique em **Ver relato e comentários** para consultar esforço, dor, recuperaç
 
 O atleta vê comentários em **Treino**, **Calendário** e **Evolução**, inclusive quando a sessão ainda não tem relato, e pode exportá-los junto com seus dados. Seus registros só podem ser editados por ele; o admin dono e treinadores ativos vinculados podem consultá-los. O resumo organiza as informações relatadas, sem avaliar clinicamente ou mudar a prescrição.
 
-Convites e SMTP para novos usuários ficam no ciclo de expansão.
+Cadastro separado com escolha inicial de área, landing, recuperação de senha e SMTP próprio pertencem à próxima sprint UX-02. O SMTP padrão atual continua limitado aos endereços autorizados da organização.

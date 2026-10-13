@@ -1,0 +1,52 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import {parsePlan} from '../importer.js';
+
+test('UX-01 preserves history and enforces cumulative areas, owner roster and revocation',async()=>{
+ const db=new PGlite(),ids=Array.from({length:6},(_,i)=>`00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`);
+ const [A,B,O,C,M,P]=ids;
+ const actor=async(id,role='authenticated')=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id||'']);await db.exec('set role '+role);};
+ const context=async()=>(await db.query('select public.atlas_access_context() c')).rows[0].c;
+ const sql=async(query,args=[])=> (await db.query(query,args)).rows;
+ const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
+ const save=async athlete=>(await sql('select public.atlas_save_draft(null,$1,$2::jsonb,null,null) d',[athlete,JSON.stringify(doc)]))[0].d;
+ const schema=async file=>db.exec(readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;
+   create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}',is_anonymous boolean default false,deleted_at timestamptz);
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+   grant usage on schema auth to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;`);
+  await schema('schema-v2.sql');
+  for(const id of ids){await sql('insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,$2,$3,$4)',[id,`person${id.slice(-1)}@example.com`,id===P?null:'2026-10-13T12:00:00Z',JSON.stringify({full_name:'Pessoa '+id.slice(-1),role:'admin',secret:'never-return'})]);if(id!==M)await sql('insert into public.atlas_profiles(user_id,name) values($1,$2)',[id,'Pessoa '+id.slice(-1)]);}
+  await sql('insert into public.atlas_admins values($1)',[O]);await actor(O);
+  const original=(await sql('select public.atlas_import_plan($1,$2::jsonb) p',[A,JSON.stringify(doc)]))[0].p;
+  const planB=(await sql('select public.atlas_import_plan($1,$2::jsonb) p',[B,JSON.stringify(doc)]))[0].p;
+  await actor(A);await sql("insert into public.atlas_activity_records(user_id,plan_id,session_id,status,km) values($1,$2,'sessao-001','feito',3)",[A,original]);
+  await db.exec('reset role');await schema('schema-v3.sql');await actor(O);await sql('insert into public.atlas_coaches(user_id) values($1)',[C]);await sql('insert into public.atlas_coach_athletes(coach_id,athlete_id) values($1,$2)',[C,A]);const draft=await save(A);
+  await db.exec('reset role');await schema('schema-v4.sql');await actor(C);const cid='10000000-0000-4000-8000-000000000001';await sql("select public.atlas_add_session_comment($1,$2,$3,'sessao-001','Registro preservado')",[cid,A,original]);
+  await db.exec('reset role');await schema('supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql');
+  assert.equal((await sql('select count(*)::int n from public.atlas_profiles'))[0].n,6);
+  assert.deepEqual((await sql('select name,is_admin from public.atlas_profiles where user_id=$1',[M]))[0],{name:'Pessoa 5',is_admin:false});
+  await actor(O);await sql('insert into public.atlas_coaches(user_id) values($1)',[A]);
+  await actor(A);assert.deepEqual((await context()).areas,['athlete','coach']);assert.equal((await sql('select id from public.atlas_plans'))[0].id,original);
+  assert.equal(Number((await sql('select km from public.atlas_activity_records'))[0].km),3);assert.equal((await sql('select id from public.atlas_session_comments'))[0].id,cid);assert.equal((await sql('select * from public.atlas_plan_drafts')).length,0);
+  await sql("insert into public.atlas_activity_records(user_id,plan_id,session_id,status) values($1,$2,'sessao-002','adaptado')",[A,original]);
+  await assert.rejects(save(B),/não autorizado/);await assert.rejects(sql("insert into public.atlas_activity_records(user_id,plan_id,session_id,status) values($1,$2,'sessao-001','feito')",[B,planB]),/row-level security/);
+  await assert.rejects(sql('select public.atlas_list_users()'),/Somente o dono/);await assert.rejects(sql('select public.atlas_ensure_profile($1)',[B]),/não autorizada/);await assert.rejects(sql('insert into public.atlas_admins values($1)',[A]),/permission denied/);
+  await sql("update public.atlas_profiles set preferred_area='admin' where user_id=$1",[A]);assert.ok(!(await context()).areas.includes('admin'));
+  await actor(C);assert.equal((await sql('select id from public.atlas_plan_drafts'))[0].id,draft.id);assert.equal((await sql('select * from public.atlas_activity_records')).length,2);assert.equal((await sql('update public.atlas_activity_records set km=999 where user_id=$1 returning *',[A])).length,0);
+  await actor(B);await sql('select public.atlas_enable_coach()');await sql('select public.atlas_enable_coach()');assert.deepEqual((await context()).areas,['athlete','coach']);
+  await assert.rejects(sql('insert into public.atlas_coach_athletes(coach_id,athlete_id) values($1,$2)',[B,A]),/Somente o dono/);await assert.rejects(sql('insert into public.atlas_coaches(user_id) values($1)',[M]),/Somente o dono/);
+  await actor(P);await assert.rejects(sql('select public.atlas_enable_coach()'),/Confirme/);
+  await actor(O);await sql('insert into public.atlas_coach_athletes(coach_id,athlete_id) values($1,$2)',[A,B]);await actor(A);assert.ok((await sql('select id from public.atlas_plans')).some(p=>p.id===planB));await save(B);
+  await actor(O);await sql('update public.atlas_coaches set active=false where user_id=$1',[A]);await actor(A);assert.deepEqual((await context()).areas,['athlete']);await assert.rejects(sql('select public.atlas_enable_coach()'),/desativado/);assert.deepEqual((await sql('select id from public.atlas_plans')).map(p=>p.id),[original]);await assert.rejects(save(B),/não autorizado/);await sql("update public.atlas_activity_records set km=3.5 where session_id='sessao-001'");
+  await actor(O);await sql('update public.atlas_coaches set active=true where user_id=$1',[A]);await sql('update public.atlas_coach_athletes set active=false where coach_id=$1',[A]);await actor(A);await assert.rejects(save(B),/não autorizado/);
+  await actor(O);const roster=(await sql("select public.atlas_list_users('', 'all',0,2) r"))[0].r;assert.equal(roster.users.length,2);assert.equal(roster.total,6);assert.ok(!JSON.stringify(roster).includes('never-return'));assert.equal((await sql("select public.atlas_list_users('', 'pending',0,25) r"))[0].r.users[0].user_id,P);
+  await assert.rejects(sql("select public.atlas_list_users('', 'all',0,101)"),/paginação inválidos/);
+  await db.exec('reset role');await sql('delete from public.atlas_profiles where user_id=$1',[M]);await actor(O);assert.equal((await sql("select public.atlas_list_users('person5', 'all',0,25) r"))[0].r.users[0].profile_ready,false);await sql('select public.atlas_ensure_profile($1)',[M]);await sql('select public.atlas_ensure_profile($1)',[M]);assert.equal((await sql("select public.atlas_list_users('person5', 'all',0,25) r"))[0].r.users[0].profile_ready,true);
+  await db.exec('reset role');const NEW='00000000-0000-4000-8000-000000000099';await sql("insert into auth.users(id,email,raw_user_meta_data) values($1,'new@example.com',$2)",[NEW,JSON.stringify({full_name:['invalid'],role:'admin',account_type:'coach'})]);assert.equal((await sql('select name from public.atlas_profiles where user_id=$1',[NEW]))[0].name,'Novo usuário');assert.equal((await sql('select count(*)::int n from public.atlas_coaches where user_id=$1',[NEW]))[0].n,0);
+  await actor(null,'anon');await assert.rejects(sql('select public.atlas_list_users()'),/permission denied/);await assert.rejects(sql('select public.atlas_enable_coach()'),/permission denied/);
+ }finally{await db.close();}
+});

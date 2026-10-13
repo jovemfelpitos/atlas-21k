@@ -15,8 +15,11 @@ async function harness(role = 'admin') {
  let drafts = [], plans = [{...doc, id:'p1', user_id:'a', state:'published', version:1, atlas_sessions:doc.sessions}], failSave = false, failPublish = false, failComment = false;
  const records=[{user_id:'a',plan_id:'p1',session_id:'sessao-001',status:'adaptado',km:2.5,minutes:21,effort:4,pain:0,recovery:'Normal',notes:'<script>relato privado</script>',updated_at:'2026-10-09T12:00:00Z'}],comments=[];
  const calls = [];
+ const coaches=[{user_id:'coach',active:true}];
  const request = async (path, options = {}) => {
   const body = options.body ? JSON.parse(options.body) : null; calls.push({path, body, method: options.method});
+  if (path.includes('rpc/atlas_list_users')) {let users=people.map(p=>({...p,email:p.user_id+'@example.com',email_confirmed:true,profile_ready:true,coach_status:coaches.find(c=>c.user_id===p.user_id)?.active?'active':coaches.some(c=>c.user_id===p.user_id)?'inactive':'none'}));if(owner&&!people.some(p=>p.user_id==='pending'))users.push({user_id:'pending',name:'Perfil pendente',email:'pending@example.com',profile_ready:false,email_confirmed:true,coach_status:'none'});if(body?.user_filter==='coaches')users=users.filter(p=>p.coach_status!=='none');if(body?.search_text)users=users.filter(p=>(p.name+p.email).includes(body.search_text));return {users,total:users.length};}
+  if (path.includes('rpc/atlas_ensure_profile')) {people.push({user_id:body.account,name:'Novo usuário'});return {};}
   if (path.includes('rpc/atlas_save_draft')) {if (failSave) throw Error('Falha de rede'); const old = drafts.find(d => d.id === body.draft_id); const row = {id: old?.id || 'd' + (drafts.length + 1), athlete_id:body.athlete, author_id:owner?'owner':'coach', document:body.document, revision:old ? old.revision + 1 : 1, state:'draft', base_plan_id:body.base_plan}; drafts = drafts.filter(d => d.id !== row.id).concat(row); return structuredClone(row);}
   if (path.includes('rpc/atlas_publish_draft')) {if (failPublish) throw Error('Conflito de edição'); const row = drafts.find(d => d.id === body.draft_id); row.state = 'published'; const base = plans.find(p => p.id === row.base_plan_id); if (base) base.state = 'archived'; plans.unshift({...row.document,id:'p2',user_id:row.athlete_id,state:'published',version:base?base.version+1:1,previous_plan_id:base?.id,atlas_sessions:row.document.sessions}); return 'p2';}
   if (path.includes('rpc/atlas_archive_plan')) {plans.find(p => p.id === body.plan).state = 'archived'; return null;}
@@ -24,7 +27,7 @@ async function harness(role = 'admin') {
   if (path.includes('atlas_activity_records')) return structuredClone(records);
   if (path.includes('atlas_session_comments')) return structuredClone(comments);
   if (path.includes('atlas_profiles')) return structuredClone(people);
-  if (path.includes('atlas_coaches')) return [{user_id:'coach',active:true}];
+  if (path.includes('atlas_coaches')) {if(options.method==='POST')coaches.push({user_id:body.user_id,active:true});return structuredClone(coaches);}
   if (path.includes('atlas_coach_athletes')) return [{coach_id:'coach',athlete_id:'a',active:true}];
   if (path.includes('atlas_plan_drafts')) return structuredClone(drafts);
   if (path.includes('atlas_plan_events')) return [];
@@ -70,6 +73,16 @@ test('editor rejects empty guide, invalid dates and duplicate session IDs', () =
 
 test('CSV validation identifies the row of duplicate sessions', () => {
  assert.throws(()=>parsePlan(model.replace('sessao-002','sessao-001')),/Linha \d+: ID inválido ou repetido/);
+});
+
+test('owner can activate an athlete with a plan and sees incomplete accounts in the user roster',async()=>{
+ const h=await harness(),d=h.w.document;
+ try{
+  await h.click('[data-page=team]');assert.match(d.querySelector('#content').textContent,/pending@example.com/);assert.ok(d.querySelector('[data-activate-coach=a]'));
+  await h.click('[data-activate-coach=a]');assert.match(d.querySelector('#managementDialog').textContent,/histórico de atleta permanece/);await h.click('#confirmAction');assert.ok(h.calls.some(c=>c.path.includes('atlas_coaches')&&c.method==='POST'&&c.body.user_id==='a'));assert.equal(h.plans[0].id,'p1');assert.equal(h.records[0].km,2.5);
+  assert.ok(d.querySelector('[data-coach=a]'));await h.click('[data-repair-profile=pending]');assert.ok(d.querySelector('[data-activate-coach=pending]'));
+  await h.click('[data-users-filter=coaches]');assert.equal(d.querySelector('[data-activate-coach=b]'),null);
+ }finally{await h.close();}
 });
 
 test('monitoring filters sessions, escapes reports, protects unsent comments and retries without duplicating',async()=>{

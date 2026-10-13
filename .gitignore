@@ -7,3 +7,4 @@ dist/
 tools/.seed-reference-plan.sql
 
 .artifacts/
+supabase/.temp/

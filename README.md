@@ -1,5 +1,9 @@
 # Atlas Run
 
+UX-01 implementada: uma conta com áreas atleta/treinador, **Trocar área**, ativação sem perder histórico e lista **Usuários** exclusiva do dono. Perfil é provisionado no cadastro e regularizado no primeiro acesso. Migração aplicada: `atlas_run_ux01_accounts_and_areas`, fonte em [supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql](supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql). Não reaplique no projeto existente. A leitura do dono retornou quatro contas; o teste de promoção em transação revertida preservou plano/atividade e negou privilégio admin/prescrição para si. 30 testes locais passaram; upgrade remoto manteve um plano, 39 sessões e uma atividade. Manual atualizado: [GESTAO.md](GESTAO.md).
+
+[Planejamento de UX-02 a UX-06](PLANEJAMENTO-UX.md): landing/acesso separados, escolha inicial de área, recuperação, SMTP próprio, perfil completo, calendário mensal, registro explicado e piloto. O roteiro original 5/6/7 fica para reavaliação ao final do ciclo. As seções 0 a 4 abaixo registram a base anterior; suas referências à exclusividade de perfis foram substituídas por UX-01. Permissões dependem de papéis e vínculos no banco; a preferência de área só define navegação.
+
 Repositório jovemfelpitos/atlas-21k. Produção: https://atlasrun.netlify.app/. O Netlify publica a branch main; `npm run build` gera dist com uma lista explícita de arquivos públicos, sem SQL, ferramentas ou testes. Execute `npm start` e abra http://127.0.0.1:4173. Para testes, `npm ci` e `npm test`: parser CSV, fluxos com respostas simuladas e RLS em PostgreSQL local (PGlite). Dependências são apenas de desenvolvimento. A demonstração oferece plano anterior e registros temporários em memória, perdidos ao atualizar. Nenhum treino usa localStorage como banco; apenas a sessão de autenticação é mantida no navegador.
 
 ## Supabase configurado
@@ -14,11 +18,11 @@ O advisor não apontou problemas nas tabelas/RLS. Após o uso do Auth, apontou p
 
 ## Configurar outro projeto (referência)
 
-1. Confirme qual é o projeto correto; não reutilize projeto antigo por suposição. Execute `schema-v2.sql`, `schema-v3.sql` e `schema-v4.sql`, nessa ordem, uma vez no SQL Editor. É uma instalação aditiva: não remove atlas_records nem seus registros antigos. Estes não são migrados automaticamente, porque não têm identificação de plano/sessão confiável. O schema.sql antigo permanece como referência histórica.
+1. Confirme qual é o projeto correto; não reutilize projeto antigo por suposição. Para uma instalação nova, execute `schema-v2.sql`, `schema-v3.sql`, `schema-v4.sql` e a migração UX-01 acima, nessa ordem, uma vez. É uma instalação aditiva: não remove atlas_records nem seus registros antigos. Estes não são migrados automaticamente, porque não têm identificação de plano/sessão confiável. O schema.sql antigo permanece como referência histórica.
 2. Preencha config.js com URL do projeto e chave publishable ou anon pública. Nunca use secret/service_role. Habilite e-mail/senha e confirmação de e-mail. Configure URL de autenticação para o endereço local durante os testes.
 3. Crie a conta do atleta, confirme e-mail, entre e salve nome/dias no Perfil. Crie uma conta separada com outro e-mail para administração, entre uma vez para criar o perfil e saia.
 4. Somente no SQL Editor, conceda admin à segunda conta, usando seu UUID confirmado: `insert into public.atlas_admins(user_id) values ('UUID-DO-ADMIN');`. Crie o perfil antes de conceder esse acesso. Um trigger atualiza o sinalizador de exibição do perfil. A tabela de autorização não permite insert/update pelo frontend. O booleano do perfil não dá privilégios. Não promova a conta de atleta.
-5. Entre como dono, gerencie treinadores e vínculos em Equipe/Atletas. Entre como dono ou treinador, selecione atleta, importe CSV, confira a prévia, salve rascunho, revise e publique. Entre como atleta para visualizar metas, sessões, evolução e guia. Preferências não remanejam datas. Vários planos são preservados.
+5. Entre como dono, gerencie treinadores e vínculos em Usuários/Atletas. Entre como dono ou treinador, selecione atleta, importe CSV, confira a prévia, salve rascunho, revise e publique. Troque para a área Atleta para visualizar seus próprios planos e registrar atividades. Preferências não remanejam datas. Vários planos são preservados.
 
 ## Validação externa obrigatória
 

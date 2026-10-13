@@ -9,18 +9,19 @@ const status = value => ({draft: 'Rascunho', published: 'Publicado', archived: '
 const field = (label, key, value, type = 'text', extras = '') => `<label>${esc(label)}<input data-field="${key}" type="${type}" value="${esc(value)}" ${extras}></label>`;
 const area = (label, key, value, max) => `<label>${esc(label)}<textarea data-field="${key}" rows="3" maxlength="${max}">${esc(value)}</textarea></label>`;
 
-export function createManagement({root, role, enabled = true, userId, request, notice, saveProfile}) {
+export function createManagement({root, role, enabled = true, userId, request, notice, saveProfile, accountControls = () => '', enableCoach}) {
  let people = [], coaches = [], links = [], plans = [], drafts = [], events = [], records = [], comments = [];
  let monitor = {athlete:'',plan:'',from:'',to:'',state:'all',history:false}, inspected = null, commentDraft = {id:null,text:''};
  let page = 'overview', selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
  let dirty = false, busy = false, preview = 'list', pending = null;
+ let users = [], usersTotal = 0, usersSearch = '', usersFilter = 'all', usersOffset = 0;
  const owner = role === 'admin';
  const listeners = [];
  const listen = (type, handler) => {root.addEventListener(type, handler); listeners.push([type, handler]);};
  const post = (path, body, headers = {}) => request(path, {method: 'POST', body: JSON.stringify(body), headers});
  const rpc = (name, body) => post('/rest/v1/rpc/' + name, body);
  const name = id => people.find(p => p.user_id === id)?.name || 'Atleta';
- const athletes = () => people.filter(p => p.user_id !== userId && !p.is_admin && !coaches.some(c => c.user_id === p.user_id));
+ const athletes = () => people.filter(p => owner || (p.user_id !== userId && links.some(l => l.coach_id === userId && l.athlete_id === p.user_id && l.active)));
  const options = selected => `<option value="">Selecione um atleta</option>` + athletes().map(p => `<option value="${esc(p.user_id)}" ${p.user_id === selected ? 'selected' : ''}>${esc(p.name)} · ${esc(p.user_id.slice(-6))}</option>`).join('');
  const message = (text, error = false) => {const el = root.querySelector('#managementError'); if (el) {el.textContent = text; el.classList.toggle('error', error); el.setAttribute('role', error ? 'alert' : 'status');} notice(text);};
 
@@ -31,7 +32,9 @@ export function createManagement({root, role, enabled = true, userId, request, n
    '/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id', '/rest/v1/atlas_session_comments?select=*&order=created_at,id'
   ].map(path => readRows(request,path)));
   [people, coaches, links, plans, drafts, events, records, comments] = result;
+  if (owner) await loadUsers();
  }
+ async function loadUsers() {const data=await rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});users=data.users;usersTotal=data.total;}
 
  function previewPlan(document) {
   const sessions = document.sessions;
@@ -61,7 +64,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   const week = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   return `<button data-page="athletes">← Atletas</button><h2>${esc(person.name)}</h2><p>Dias disponíveis: ${(person.available_days || []).map(d => week[d]).join(', ') || 'não informados'}</p><p>Preferências não alteram datas de planos publicados.</p>
    <div class="actions"><button data-new="${esc(selectedAthlete)}" class="primary">Criar plano</button><button data-import="${esc(selectedAthlete)}">Importar CSV</button><button data-monitor-athlete="${esc(selectedAthlete)}">Acompanhar atividades</button></div>
-   ${owner ? `<h3>Treinadores responsáveis</h3>${coaches.filter(c => c.active).map(c => {const link = links.find(l => l.coach_id === c.user_id && l.athlete_id === selectedAthlete); return `<div class="team-row"><span>${esc(name(c.user_id))}</span><button data-link-coach="${esc(c.user_id)}" data-link-athlete="${esc(selectedAthlete)}" data-link-active="${!link?.active}">${link?.active ? 'Revogar vínculo' : 'Vincular treinador'}</button></div>`;}).join('') || '<p>Cadastre um treinador na página Equipe.</p>'}` : ''}
+   ${owner ? `<h3>Treinadores responsáveis</h3>${coaches.filter(c => c.active && c.user_id !== selectedAthlete).map(c => {const link = links.find(l => l.coach_id === c.user_id && l.athlete_id === selectedAthlete); return `<div class="team-row"><span>${esc(name(c.user_id))}</span><button data-link-coach="${esc(c.user_id)}" data-link-athlete="${esc(selectedAthlete)}" data-link-active="${!link?.active}">${link?.active ? 'Revogar vínculo' : 'Vincular treinador'}</button></div>`;}).join('') || '<p>Ative um treinador na página Usuários.</p>'}` : ''}
    <h3>Planos e histórico</h3>${plans.filter(p => p.user_id === selectedAthlete).map(planCard).join('') || '<p>Sem planos publicados.</p>'}<h3>Rascunhos</h3>${drafts.filter(d => d.athlete_id === selectedAthlete && d.state === 'draft').map(draftCard).join('') || '<p>Sem rascunhos.</p>'}`;
  }
  function draftCard(d) {return `<article class="card"><span class="tag">Rascunho · revisão ${d.revision}</span><h3>${esc(d.document.name)}</h3><p>${esc(name(d.athlete_id))} · ${d.document.sessions.length} sessões</p><button data-draft="${esc(d.id)}">Editar e revisar</button><button data-copy-draft="${esc(d.id)}">Duplicar</button></article>`;}
@@ -110,16 +113,14 @@ export function createManagement({root, role, enabled = true, userId, request, n
  }
  function teamPage() {
   if (!owner) return '';
-  const candidates = people.filter(p => p.user_id !== userId && !p.is_admin && !coaches.some(c => c.user_id === p.user_id) && !plans.some(plan => plan.user_id === p.user_id) && !drafts.some(d => d.athlete_id === p.user_id));
-  return `<h2>Equipe</h2><p>O dono concede acesso de treinador a contas separadas, sem planos de atleta. A desativação preserva os planos e retira o acesso de gestão.</p><form id="coachForm"><label>Conta já cadastrada<select name="coach" required><option value="">Selecione uma conta</option>${candidates.map(p => `<option value="${esc(p.user_id)}">${esc(p.name)} · ${esc(p.user_id.slice(-6))}</option>`).join('')}</select></label><button class="primary">Conceder acesso de treinador</button></form>
-   ${coaches.map(c => `<article class="card"><h3>${esc(name(c.user_id))}</h3><p>${c.active ? 'Ativo' : 'Inativo'} · ${links.filter(l => l.coach_id === c.user_id && l.active).length} vínculo(s)</p><button data-coach="${esc(c.user_id)}" data-enabled="${!c.active}">${c.active ? 'Desativar treinador' : 'Reativar treinador'}</button></article>`).join('') || '<p>Nenhum treinador cadastrado. Crie a conta pelo acesso do app e entre uma vez para criar o perfil.</p>'}`;
+  return `<h2>Usuários</h2><p>Uma conta pode ser atleta e treinador. Ativar ou desativar a gestão preserva os treinos pessoais e o histórico.</p><form id="usersSearchForm"><label>Buscar por nome ou e-mail<input name="search" type="search" maxlength="120" value="${esc(usersSearch)}"></label><button type="submit">Buscar usuários</button></form><div class="user-filters">${[['all','Todos'],['athletes','Atletas'],['coaches','Treinadores'],['pending','Pendências']].map(([key,label])=>`<button data-users-filter="${key}" aria-pressed="${usersFilter===key}">${label}</button>`).join('')}</div><p>${usersTotal} usuário(s) encontrado(s)</p>${users.map(p=>`<article class="card"><h3>${esc(p.name)}</h3><p>${esc(p.email||'E-mail não informado')}</p><p>Atleta${p.coach_status==='none'?'':p.coach_status==='active'?' · Treinador ativo':' · Treinador desativado'}${p.is_admin?' · Admin dono':''}</p><p>${p.email_confirmed?'E-mail confirmado':'Aguardando confirmação de e-mail'}${p.profile_ready?'':' · Perfil pendente'}</p><div class="actions">${!p.profile_ready?`<button data-repair-profile="${esc(p.user_id)}">Regularizar perfil</button>`:p.coach_status==='none'?`<button data-activate-coach="${esc(p.user_id)}" ${p.email_confirmed?'':'disabled'}>Ativar treinador</button>`:`<button data-coach="${esc(p.user_id)}" data-enabled="${p.coach_status!=='active'}" ${!p.email_confirmed&&p.coach_status!=='active'?'disabled':''}>${p.coach_status==='active'?'Desativar gestão':'Reativar treinador'}</button>`}${p.profile_ready?`<button data-athlete="${esc(p.user_id)}">Ver atleta e vínculos</button>`:''}</div></article>`).join('')||'<p>Nenhum usuário encontrado neste filtro.</p>'}<div class="actions"><button data-users-offset="${Math.max(0,usersOffset-25)}" ${usersOffset===0?'disabled':''}>Anterior</button><button data-users-offset="${usersOffset+25}" ${usersOffset+users.length>=usersTotal?'disabled':''}>Próxima</button></div>`;
  }
  function profilePage() {
   const p = people.find(p => p.user_id === userId);
-  return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Perfil: ${owner ? 'admin dono' : 'treinador'}. Para registrar atividades pessoais, use sua conta de atleta.</p>`;
+  return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Área atual: ${owner ? 'admin dono' : 'treinador'}. Troque para Atleta para consultar e registrar seus treinos pessoais na mesma conta.</p>${accountControls()}`;
  }
  function render() {
-  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Equipe']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key==='monitoring') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
+  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key==='monitoring') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
  }
@@ -176,18 +177,23 @@ export function createManagement({root, role, enabled = true, userId, request, n
   }
  });
  listen('submit', async e => {
-  if (!['planEditor', 'coachForm', 'staffProfile','monitorFilters','commentForm'].includes(e.target.id)) return;
+  if (!['planEditor', 'usersSearchForm', 'staffProfile','monitorFilters','commentForm'].includes(e.target.id)) return;
   e.preventDefault();
   await command(async () => {
    if (e.target.id === 'planEditor') await save();
    if (e.target.id === 'monitorFilters') {const f=e.target.elements; if(f.from.value&&f.to.value&&f.from.value>f.to.value) throw Error('A data inicial deve ser anterior ou igual à final.'); monitor={athlete:f.athlete.value,plan:f.plan.value,from:f.from.value,to:f.to.value,state:f.state.value,history:f.history.checked}; if(monitor.plan&&!plans.some(p=>p.id===monitor.plan&&(!monitor.athlete||p.user_id===monitor.athlete))) monitor.plan=''; render();}
    if (e.target.id === 'commentForm') {const row=inspectedRow(); if(!row)throw Error('Sessão indisponível.'); const text=commentDraft.text.trim(); if(!text||text.length>3000)throw Error('Escreva um comentário de até 3000 caracteres.'); commentDraft.id??=crypto.randomUUID(); const saved=await rpc('atlas_add_session_comment',{comment_id:commentDraft.id,athlete:row.plan.user_id,plan:row.plan.id,session:row.session.id,comment_text:text}); comments=comments.filter(c=>c.id!==saved.id).concat(saved).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));commentDraft={id:null,text:''};dirty=false;render();message('Comentário salvo e disponível para o atleta.');}
-   if (e.target.id === 'coachForm') {const id = e.target.elements.coach.value; if (!id) throw Error('Selecione uma conta.'); await post('/rest/v1/atlas_coaches', {user_id: id}); await refresh(); message('Acesso de treinador concedido. Vincule os atletas na página Atletas.');}
+   if (e.target.id === 'usersSearchForm') {usersSearch=e.target.elements.search.value.trim();usersOffset=0;await loadUsers();render();}
    if (e.target.id === 'staffProfile') {const value = e.target.elements.name.value.trim(); if (!value) throw Error('Preencha o nome.'); await saveProfile(value); await refresh(); message('Perfil salvo.');}
   });
  });
  listen('click', async e => {
   const b = e.target.closest('button'); if (!b || busy) return;
+  if (b.hasAttribute('data-enable-coach')) {await command(async()=>{await enableCoach?.();});return;}
+  if (b.dataset.usersFilter) {await command(async()=>{usersFilter=b.dataset.usersFilter;usersOffset=0;await loadUsers();render();});return;}
+  if (b.dataset.usersOffset!==undefined) {await command(async()=>{usersOffset=Number(b.dataset.usersOffset);await loadUsers();render();});return;}
+  if (b.dataset.repairProfile) {await command(async()=>{await rpc('atlas_ensure_profile',{account:b.dataset.repairProfile});await refresh();message('Perfil regularizado. A conta e o histórico foram preservados.');});return;}
+  if (b.dataset.activateCoach) {const p=users.find(p=>p.user_id===b.dataset.activateCoach);if(!p)return;dialog('Ativar área de treinador?',`<p><strong>${esc(p.name)}</strong> · ${esc(p.email)}</p><p>O histórico de atleta permanece nesta conta. O treinador acessará outros atletas somente depois de receber os vínculos.</p>`,'Ativar treinador',async()=>{await post('/rest/v1/atlas_coaches',{user_id:p.user_id});await refresh();message('Área de treinador ativada. Gerencie os vínculos no detalhe do atleta.');});return;}
   if (b.hasAttribute('data-dismiss')) {root.querySelector('#managementDialog').close(); pending = null; return;}
   if (b.id === 'confirmAction') {const action = pending; await command(async () => {await action?.(); const modal = root.querySelector('#managementDialog'); if (modal?.open) modal.close(); pending = null;}); return;}
   if (b.dataset.page) {navigate(() => {page = b.dataset.page; if (page === 'plans') selectedAthlete = ''; editor = null; render();}); return;}

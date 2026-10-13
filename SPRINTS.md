@@ -1,5 +1,11 @@
 # Atlas Run — sprints 0 a 4
 
+## Próximo ciclo: revisão de experiência
+
+Planejamento de 12/10/2026 em [PLANEJAMENTO-UX.md](PLANEJAMENTO-UX.md): conta única com áreas atleta/treinador, gestão de usuários, landing, acesso e recuperação, perfil, calendário e registro. UX-01 foi implementada em 13/10/2026; UX-02 a UX-06 permanecem planejadas. Ao final desse ciclo será decidida a execução das antigas sprints 5 (biblioteca), 6 (equipes) e 7 (cobrança).
+
+O contrato exclusivo abaixo é o registro histórico das sprints 0 a 4. UX-01 o substitui por áreas cumulativas: relato pessoal permanece editável pelo próprio usuário mesmo quando também é treinador/dono, e gestão de terceiros continua restrita aos vínculos ou ao dono. Consulte o manual atualizado em GESTAO.md.
+
 Decisão de produto, 09/10/2026: três perfis exclusivos por conta — atleta, treinador e admin dono. A conta de treino do dono continua atleta; a administração usa uma conta separada.
 
 ## Sprint 0: contrato e fluxos
@@ -57,3 +63,9 @@ Testes de PostgreSQL cobrem separação entre treinadores, vínculo revogado, au
 Fora deste ciclo: biblioteca de modelos, múltiplas equipes, convites por e-mail, assinatura e cobrança. Plano comercial e plano de treino continuam conceitos separados.
 
 Aceite da sprint 4: 25 testes locais passaram (cálculos, interface e PostgreSQL com dois treinadores/atletas). No banco remoto, o dono leu 1 registro e tentou atualizar 0 linhas; o comando de comentário confirmou autoria e papel em transação revertida. Nenhum comentário de teste foi persistido. O banco preservou 1 plano, 39 sessões e 1 atividade. A atualização foi dividida em três migrações menores por erro de requestState no conector; o script schema-v4.sql representa o mesmo estado final.
+
+## UX-01 — conta única e gestão de acessos · entregue
+
+Migração `atlas_run_ux01_accounts_and_areas`, gerada pelo CLI e mantida em `supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql`. Perfil automático e regularização idempotente; metadados do usuário não autorizam papéis. Listagem paginada de contas/confirmação/e-mail exclusiva do dono, áreas cumulativas, ativação pessoal limitada de treinador, bloqueio da reativação após desativação pelo dono e preferência de área sem poder de autorização. A lista Usuários permite ativar um atleta com planos/rascunhos. Treinadores podem ser atletas vinculados a outros treinadores. Atividades pessoais continuam editáveis somente pelo titular, inclusive com duas áreas. Prescrições publicadas, versões, registros e comentários mantêm seus IDs.
+
+Aceite: 30 testes locais, build público de 17 arquivos e interface de gestão conferida em viewport mobile. Verificação remota da lista do dono e promoção do atleta com plano em transação revertida; quatro perfis, um plano, 39 sessões, uma atividade e um treinador persistido após a verificação. Testes completos com login em dispositivos reais permanecem em UX-06. Landing, cadastro separado, escolha inicial de área e recuperação de senha continuam em UX-02.

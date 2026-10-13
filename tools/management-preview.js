@@ -10,6 +10,7 @@ const clone=x=>structuredClone(x);
 async function request(path, options={}) {
  const data=options.body?JSON.parse(options.body):null;
  const permitted=id=>currentRole==='admin'||links.some(l=>l.coach_id===userId&&l.athlete_id===id&&l.active);
+ if(path.includes('/rpc/atlas_list_users')){if(currentRole!=='admin')throw Error('Somente o dono.');let users=people.map(p=>({...p,email:p.user_id+'@example.com',email_confirmed:true,profile_ready:true,coach_status:roles.find(c=>c.user_id===p.user_id)?.active?'active':roles.some(c=>c.user_id===p.user_id)?'inactive':'none'}));if(data.user_filter==='coaches')users=users.filter(p=>p.coach_status!=='none');if(data.user_filter==='pending')users=[];if(data.search_text)users=users.filter(p=>(p.name+p.email).toLowerCase().includes(data.search_text.toLowerCase()));return {total:users.length,users:clone(users.slice(data.page_offset,data.page_offset+data.page_size))};}
  if(path.includes('/rpc/atlas_save_draft')){
   if(!permitted(data.athlete))throw Error('Atleta não autorizado.');
   let row=drafts.find(d=>d.id===data.draft_id);
