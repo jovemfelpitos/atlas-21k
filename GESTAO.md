@@ -33,6 +33,14 @@ Rascunhos são visíveis somente à gestão autorizada. Publicação sempre usa 
 
 Entre com sua conta, sincronize e escolha seu plano. O plano publicado mais recente aparece primeiro, com versões arquivadas identificadas como histórico. Registre cada atividade na sessão correspondente. Perfil e relato de execução pertencem à sua conta; o treinador não edita esses registros.
 
+## Calendário e agenda
+
+Na área de atleta, abra **Calendário**. **Mês** mostra os dias de segunda a domingo; o contorno destaca hoje e o fundo destaca o dia selecionado. Toque em um dia para abrir todas as suas sessões. Use as setas para mudar de mês, **Hoje** para voltar à data atual ou **Ir para um treino** para encontrar a próxima sessão (ou a última, se o plano terminou). Ao abrir um plano fora do período atual, o calendário começa perto de uma sessão; um mês vazio continua acessível. **Agenda** mantém a lista completa de todas as datas da versão selecionada.
+
+Os filtros valem para o plano inteiro: **Todas**, **Realizadas** (feito + adaptado), **Sem registro** (sem relato, seja em data passada, hoje ou futura) e **Não feitas** (marcadas explicitamente pelo atleta). Símbolos e textos acompanham as cores. Um dia pode ter várias sessões com situações diferentes; nenhuma substitui a outra. Salvar uma atividade atualiza a situação mantendo mês, dia e filtro; se ela sair do filtro atual, use **Todas** para reencontrá-la. A seleção de plano identifica a versão e o histórico; registros de versões diferentes permanecem separados.
+
+Na gestão, abra **Atletas → Abrir atleta → Ver calendário** em um plano, ou **Planos → Ver calendário**. A consulta usa o mesmo calendário e os mesmos filtros. **Ver relato e comentários** abre o acompanhamento da sessão; o botão **Calendário** retorna à seleção anterior. A equipe pode comentar pelo fluxo existente e consulta o relato em leitura. O treinador vê somente planos de atletas vinculados, com sua área pessoal separada.
+
 ## Meu perfil — todas as áreas
 
 Abra **Perfil** na área de atleta ou **Meu perfil** na gestão. Edite nome, data de nascimento opcional e dias disponíveis; depois use **Salvar perfil**. Uma data futura não é aceita. O nome e a foto são os mesmos ao trocar de área, mantendo o histórico. **Escolher foto** aceita JPG, PNG ou WebP de até 8 MB e ajusta a imagem para um quadrado. **Remover foto** volta às iniciais. Sua foto e nascimento ficam acessíveis somente a você, ao dono e à equipe autorizada pelos vínculos.

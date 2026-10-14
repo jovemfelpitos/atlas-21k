@@ -75,6 +75,20 @@ test('CSV validation identifies the row of duplicate sessions', () => {
  assert.throws(()=>parsePlan(model.replace('sessao-002','sessao-001')),/Linha \d+: ID inválido ou repetido/);
 });
 
+test('coach calendar uses linked plans only, keeps multiple sessions and opens read-only reports with a return path',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  h.plans[0].atlas_sessions[1].date=h.plans[0].atlas_sessions[0].date;
+  h.plans.push({...structuredClone(h.plans[0]),id:'personal',user_id:'coach',name:'Plano pessoal privado'});
+  h.plans.push({...structuredClone(h.plans[0]),id:'outsider',user_id:'b',name:'Plano sem vínculo'});
+  await h.portal.load();h.portal.render();await h.click('[data-page=plans]');
+  assert.equal(d.querySelectorAll('[data-calendar-plan]').length,1);assert.ok(!d.querySelector('#content').textContent.includes('Plano pessoal privado'));assert.ok(!d.querySelector('#content').textContent.includes('Plano sem vínculo'));
+  await h.click('[data-calendar-plan=p1]');assert.equal(d.querySelectorAll('.calendar-day-detail .card').length,2);assert.equal(d.querySelectorAll('[data-record]').length,0);assert.equal(d.querySelectorAll('.calendar-status.done').length,1);
+  await h.click('[data-cal-filter=done]');assert.equal(d.querySelectorAll('[data-calendar-inspect]').length,1);await h.click('[data-calendar-inspect]');assert.match(d.querySelector('#content').textContent,/somente leitura/);assert.ok(!d.querySelector('#content script'));
+  await h.input('#commentForm textarea','Observação pelo calendário');await h.submit('#commentForm');await h.click('[data-page=calendar]');assert.match(d.querySelector('[data-calendar-inspect]').textContent,/\(1\)/);assert.equal(d.querySelector('[data-cal-filter=done]').getAttribute('aria-pressed'),'true');assert.equal(h.records[0].status,'adaptado');
+ }finally{await h.close();}
+});
+
 test('owner can activate an athlete with a plan and sees incomplete accounts in the user roster',async()=>{
  const h=await harness(),d=h.w.document;
  try{

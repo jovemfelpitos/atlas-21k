@@ -1,6 +1,7 @@
 import {parsePlan} from './importer.js';
 import {blankPlan, newSession, prescription, validatePlanDocument} from './plan-editor.js';
 import {readRows, monitoringRows, summaryHTML, commentsHTML, amount, sessionKey} from './monitoring.js';
+import {createCalendarState,calendarHTML,handleCalendarAction} from './calendar.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const date = value => value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
@@ -15,6 +16,9 @@ export function createManagement({root, role, enabled = true, userId, request, n
  let page = initialPage, selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
  let dirty = false, busy = false, preview = 'list', pending = null;
  let users = [], usersTotal = 0, usersSearch = '', usersFilter = 'all', usersOffset = 0;
+ let activityBack='monitoring';
+ const calendars=new Map();
+ function calendarState(){if(!calendars.has(detail))calendars.set(detail,createCalendarState(monitoringRows(plans,records,{plan:detail})));return calendars.get(detail);}
  const owner = role === 'admin';
  const listeners = [];
  const listen = (type, handler) => {root.addEventListener(type, handler); listeners.push([type, handler]);};
@@ -79,7 +83,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
    <h3>Planos e histórico</h3>${plans.filter(p => p.user_id === selectedAthlete).map(planCard).join('') || '<p>Sem planos publicados.</p>'}<h3>Rascunhos</h3>${drafts.filter(d => d.athlete_id === selectedAthlete && d.state === 'draft').map(draftCard).join('') || '<p>Sem rascunhos.</p>'}`;
  }
  function draftCard(d) {return `<article class="card"><span class="tag">Rascunho · revisão ${d.revision}</span><h3>${esc(d.document.name)}</h3><p>${esc(name(d.athlete_id))} · ${d.document.sessions.length} sessões</p><button data-draft="${esc(d.id)}">Editar e revisar</button><button data-copy-draft="${esc(d.id)}">Duplicar</button></article>`;}
- function planCard(p) {return `<article class="card"><span class="tag">${status(p.state)} · versão ${p.version}</span><h3>${esc(p.name)}</h3><p>${esc(name(p.user_id))} · ${p.atlas_sessions.length} sessões</p><button data-plan="${esc(p.id)}">Ver plano e histórico</button></article>`;}
+ function planCard(p) {return `<article class="card"><span class="tag">${status(p.state)} · versão ${p.version}</span><h3>${esc(p.name)}</h3><p>${esc(name(p.user_id))} · ${p.atlas_sessions.length} sessões</p><div class="actions"><button data-plan="${esc(p.id)}">Ver plano e histórico</button><button data-calendar-plan="${esc(p.id)}">Ver calendário</button></div></article>`;}
  function planList() {
   return `<h2>Planos de treino</h2><div class="actions"><button id="newPlan" class="primary">Criar plano</button><button id="importPlan">Importar CSV</button></div><div class="form-grid"><label>Atleta<select id="filterAthlete"><option value="">Todos os atletas</option>${options(selectedAthlete).replace('<option value="">Selecione um atleta</option>', '')}</select></label><label>Situação<select id="filterState">${[['all', 'Todas'], ['draft', 'Rascunhos'], ['published', 'Publicados'], ['archived', 'Arquivados']].map(([v, label]) => `<option value="${v}" ${filter === v ? 'selected' : ''}>${label}</option>`).join('')}</select></label></div>
    <div>${(filter === 'all' || filter === 'draft' ? drafts.filter(d => d.state === 'draft' && (!selectedAthlete || d.athlete_id === selectedAthlete)).map(draftCard).join('') : '') + plans.filter(p => (filter === 'all' || filter === p.state) && (!selectedAthlete || p.user_id === selectedAthlete)).map(planCard).join('') || '<p>Nenhum plano nesta seleção.</p>'}</div>`;
@@ -88,9 +92,14 @@ export function createManagement({root, role, enabled = true, userId, request, n
   const p = plans.find(p => p.id === detail);
   if (!p) return '<p>Plano indisponível.</p>';
   return `<button data-page="plans">← Planos</button><h2>${esc(p.name)}</h2><p>${esc(name(p.user_id))} · ${status(p.state)} · versão ${p.version}</p><div class="actions">${p.state === 'published' ? `<button data-revise="${esc(p.id)}" class="primary">Criar revisão</button><button data-archive="${esc(p.id)}">Arquivar plano</button>` : ''}<button data-copy-plan="${esc(p.id)}">Duplicar para outro atleta</button></div>
-   <button data-monitor-plan="${esc(p.id)}">Acompanhar este plano</button><p>Revisões geram uma nova versão. As sessões e atividades anteriores permanecem no histórico.</p>${previewPlan(prescription(p))}<h3>Histórico de publicação</h3>${p.previous_plan_id ? `<button data-plan="${esc(p.previous_plan_id)}">Abrir versão anterior</button>` : ''}${plans.filter(next => next.previous_plan_id === p.id).map(next => `<button data-plan="${esc(next.id)}">Abrir versão ${next.version}</button>`).join('')}<ul>${events.filter(e => e.plan_id === p.id).map(e => `<li>${({published: 'Publicado', archived: 'Arquivado', replaced: 'Substituído por nova versão'})[e.event]} · ${esc(name(e.actor_id))} · ${new Date(e.created_at).toLocaleString('pt-BR')}</li>`).join('') || '<li>Plano anterior à implementação do histórico de eventos.</li>'}</ul>`;
+   <button data-calendar-plan="${esc(p.id)}">Ver calendário</button><button data-monitor-plan="${esc(p.id)}">Acompanhar este plano</button><p>Revisões geram uma nova versão. As sessões e atividades anteriores permanecem no histórico.</p>${previewPlan(prescription(p))}<h3>Histórico de publicação</h3>${p.previous_plan_id ? `<button data-plan="${esc(p.previous_plan_id)}">Abrir versão anterior</button>` : ''}${plans.filter(next => next.previous_plan_id === p.id).map(next => `<button data-plan="${esc(next.id)}">Abrir versão ${next.version}</button>`).join('')}<ul>${events.filter(e => e.plan_id === p.id).map(e => `<li>${({published: 'Publicado', archived: 'Arquivado', replaced: 'Substituído por nova versão'})[e.event]} · ${esc(name(e.actor_id))} · ${new Date(e.created_at).toLocaleString('pt-BR')}</li>`).join('') || '<li>Plano anterior à implementação do histórico de eventos.</li>'}</ul>`;
  }
  const sessionComments = row => comments.filter(c => sessionKey(c.user_id,c.plan_id,c.session_id) === row.key);
+ function calendarPage() {
+  const p=plans.find(p=>p.id===detail);
+  if(!p)return '<p>Plano indisponível. Sincronize os dados.</p>';
+  return `<button data-plan="${esc(p.id)}">← Plano e histórico</button><p><strong>${esc(name(p.user_id))}</strong> · ${esc(p.name)} · versão ${p.version}${p.state==='archived'?' · histórico':''}</p><p class="muted">Calendário do atleta. Registros de atividade são somente leitura para a equipe.</p>${calendarHTML({rows:monitoringRows([p],records,{plan:p.id}),state:calendarState(),renderSession:row=>`<article class="card"><h3>${esc(row.session.type)}</h3><p>${esc(amount(row.session.km,'km'))} · ${esc(amount(row.session.minutes,'min'))} · ${esc(row.session.intensity)}</p><p class="preserve-lines">${esc(row.session.description)}</p>${row.session.gym?`<p>Musculação: ${esc(row.session.gym)}</p>`:''}${row.session.notes?`<p>Observações: ${esc(row.session.notes)}</p>`:''}<p>${row.record?'Relatado: '+esc(amount(row.record.km,'km'))+' · '+esc(amount(row.record.minutes,'min')):'Sem relato de execução'}</p><button data-calendar-inspect="${esc(row.key)}">Ver relato e comentários (${sessionComments(row).length})</button></article>`})}`;
+ }
  function monitoringPage() {
   const rows = monitoringRows(plans,records,monitor), available = plans.filter(p=>!monitor.athlete || p.user_id===monitor.athlete);
   return `<h2>Acompanhamento</h2><p>Compare o treino prescrito com o relato do atleta e deixe comentários na sessão.</p><form id="monitorFilters" class="form-grid">
@@ -106,7 +115,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
  function activityPage() {
   const row = inspectedRow(); if (!row) return '<button data-page="monitoring">← Acompanhamento</button><p>Sessão indisponível. Sincronize os dados.</p>';
   const s = row.session, r = row.record;
-  return `<button data-page="monitoring">← Acompanhamento</button><h2>${date(s.date)} · ${esc(s.type)}</h2><p>${esc(name(row.plan.user_id))} · ${esc(row.plan.name)} · versão ${row.plan.version}</p><span class="tag">${esc(row.label)}</span>
+  return `<button data-page="${activityBack}">← ${activityBack==='calendar'?'Calendário':'Acompanhamento'}</button><h2>${date(s.date)} · ${esc(s.type)}</h2><p>${esc(name(row.plan.user_id))} · ${esc(row.plan.name)} · versão ${row.plan.version}</p><span class="tag">${esc(row.label)}</span>
    <section class="card"><h3>Prescrição</h3><p>${esc(amount(s.km,'km'))} · ${esc(amount(s.minutes,'min'))} · ${esc(s.intensity)}</p><p class="preserve-lines">${esc(s.description)}</p>${s.gym?`<p>Musculação: ${esc(s.gym)}</p>`:''}${s.notes?`<p>Observações: ${esc(s.notes)}</p>`:''}</section>
    <section class="card"><h3>Relato do atleta · somente leitura</h3>${r?`<p>${esc(r.status)} · ${esc(amount(r.km,'km'))} · ${esc(amount(r.minutes,'min'))}</p><p>Esforço: ${r.effort??'não informado'}/10 · Dor: ${r.pain??'não informada'}/10</p><p>Recuperação: ${esc(r.recovery||'Não informada')}</p><p class="preserve-lines">${esc(r.notes||'Sem observações')}</p><small>Atualizado em ${esc(new Date(r.updated_at).toLocaleString('pt-BR'))}</small>`:'<p>O atleta ainda não registrou esta sessão.</p>'}</section>
    ${commentsHTML(sessionComments(row))}<form id="commentForm"><label>Adicionar comentário para o atleta<textarea name="body" rows="4" maxlength="3000" required>${esc(commentDraft.text)}</textarea></label><p class="muted">O atleta verá este comentário. Ele será mantido no histórico com seu nome e data, separado do relato de execução.</p><p id="commentError" class="error" role="alert"></p><button class="primary">Enviar comentário</button></form>`;
@@ -132,7 +141,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Área atual: ${owner ? 'admin dono' : 'treinador'}. Troque para Atleta para consultar e registrar seus treinos pessoais na mesma conta.</p>${accountControls()}`;
  }
  function render() {
-  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key==='monitoring') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
+  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key===(activityBack==='calendar'?'plans':'monitoring') || page==='calendar'&&key==='plans') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, calendar:calendarPage, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
   if(renderProfile)renderProfile(page==='staffProfile'?root.querySelector('#profilePanel'):null);
@@ -204,6 +213,9 @@ export function createManagement({root, role, enabled = true, userId, request, n
  });
  listen('click', async e => {
   const b = e.target.closest('button'); if (!b || busy) return;
+  if(page==='calendar'&&handleCalendarAction(e,calendarState(),render))return;
+  if(b.dataset.calendarPlan){navigate(()=>{if(!plans.some(p=>p.id===b.dataset.calendarPlan))return;detail=b.dataset.calendarPlan;page='calendar';render();});return;}
+  if(b.dataset.calendarInspect){const row=monitoringRows(plans,records,{plan:detail}).find(r=>r.key===b.dataset.calendarInspect);if(row){inspected=row.key;activityBack='calendar';commentDraft={id:null,text:''};page='activity';render();}return;}
   if (b.hasAttribute('data-enable-coach')) {if(profileState().busy||profileState().dirty){message('Salve ou descarte as alterações do perfil antes de ativar outra área.');return;}await command(async()=>{await enableCoach?.();});return;}
   if (b.dataset.usersFilter) {await command(async()=>{usersFilter=b.dataset.usersFilter;usersOffset=0;await loadUsers();render();});return;}
   if (b.dataset.usersOffset!==undefined) {await command(async()=>{usersOffset=Number(b.dataset.usersOffset);await loadUsers();render();});return;}
@@ -215,7 +227,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (b.dataset.athlete) {navigate(() => {selectedAthlete = b.dataset.athlete; page = 'athlete'; render();}); return;}
   if (b.dataset.monitorAthlete || b.dataset.monitorPlan) {navigate(()=>{const p=plans.find(p=>p.id===b.dataset.monitorPlan); monitor={athlete:p?.user_id||b.dataset.monitorAthlete,plan:p?.id||'',from:'',to:'',state:'all',history:false};page='monitoring';render();});return;}
   if (b.id==='clearMonitor') {monitor={athlete:'',plan:'',from:'',to:'',state:'all',history:false};render();return;}
-  if (b.dataset.inspect!==undefined) {const row=monitoringRows(plans,records,monitor)[Number(b.dataset.inspect)];if(row){inspected=row.key;commentDraft={id:null,text:''};page='activity';render();}return;}
+  if (b.dataset.inspect!==undefined) {const row=monitoringRows(plans,records,monitor)[Number(b.dataset.inspect)];if(row){inspected=row.key;activityBack='monitoring';commentDraft={id:null,text:''};page='activity';render();}return;}
   if (b.id === 'newPlan' || b.dataset.new) {navigate(() => b.dataset.new ? start(b.dataset.new) : selectAthlete(id => start(id))); return;}
   if (b.id === 'importPlan' || b.dataset.import) {navigate(() => {selectedAthlete = b.dataset.import || ''; page = 'import'; editor = null; render();}); return;}
   if (b.dataset.draft) {navigate(() => {editor = copy(drafts.find(d => d.id === b.dataset.draft)); page = 'editor'; dirty = false; render();}); return;}

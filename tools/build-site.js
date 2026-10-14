@@ -1,7 +1,7 @@
 import { mkdir, copyFile, rm, lstat } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 
-const files = ['index.html', 'app.html', 'auth.html', 'style.css', 'public.css', 'management.css', 'profile.css', 'app.js', 'profile.js', 'landing.js', 'auth-page.js', 'auth-client.js', 'account-areas.js', 'management.js', 'monitoring.js', 'plan-editor.js', 'config.js', 'importer.js', 'auth-callback.js', 'legacy-plan.js', 'legacy-guide.js', 'modelo-plano.csv', 'plano-anterior-referencia.csv', 'IMPORTACAO.md', 'GESTAO.md'];
+const files = ['index.html', 'app.html', 'auth.html', 'style.css', 'public.css', 'management.css', 'profile.css', 'calendar.css', 'app.js', 'profile.js', 'calendar.js', 'landing.js', 'auth-page.js', 'auth-client.js', 'account-areas.js', 'management.js', 'monitoring.js', 'plan-editor.js', 'config.js', 'importer.js', 'auth-callback.js', 'legacy-plan.js', 'legacy-guide.js', 'modelo-plano.csv', 'plano-anterior-referencia.csv', 'IMPORTACAO.md', 'GESTAO.md'];
 const projectRoot = resolve('.');
 const output = resolve(projectRoot, 'dist');
 // Only recreate this generated directory; cached Netlify configuration can be present.

@@ -1,8 +1,8 @@
 # Atlas Run — revisão de experiência e próximos ciclos
 
-Status: UX-01 implementada; UX-02 e UX-03 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas e perfil completo comum às áreas. UX-04 a UX-06 permanecem planejadas.
+Status: UX-01 implementada; UX-02, UX-03 e UX-04 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas, perfil completo e calendário mensal com agenda. UX-05 e UX-06 permanecem planejadas.
 
-Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing, acesso/recuperação e perfil completo já foram implementados. SMTP Brevo próprio e modelos estão ativos; confirmação e recuperação foram entregues e validadas pelo dono, que entrou com nova conta de treinador. Calendário mensal e revisão do registro continuam nas próximas entregas.
+Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing, acesso/recuperação e perfil completo já foram implementados. SMTP Brevo próprio e modelos estão ativos; confirmação e recuperação foram entregues e validadas pelo dono, que entrou com nova conta de treinador. Calendário mensal e agenda estão implementados; revisão do registro e piloto continuam nas próximas entregas.
 
 ## 1. Objetivo e direção do produto
 
@@ -255,7 +255,7 @@ Histórias: usuário atualiza seus dados; altera credenciais com confirmação; 
 
 **Dependências:** UX-01 e UX-02; armazenamento privado para imagens.
 
-### UX-04 — Calendário mensal e agenda · P1
+### UX-04 — Calendário mensal e agenda · P1 · entregue em 14/10/2026
 
 **Entrega:** Mês + Agenda, Hoje, seleção de dia, múltiplas sessões e filtros por execução.
 
@@ -303,6 +303,6 @@ Questões para decidir em UX-06, com experiência de uso: quem será o primeiro 
 
 ## 10. Limite desta entrega de planejamento
 
-Foram projetados fluxos, telas, regras, dependências e critérios de aceite. UX-01 atualiza contas, permissões, provisionamento de perfil, lista do dono e troca de área. UX-02 separa apresentação, acesso e app, implementa cadastro completo e recuperação; SMTP/modelos ativos e links de confirmação/recuperação validados, incluindo nova conta de treinador e leitura remota de suas permissões. UX-03 entrega perfil comum, fotos privadas, nascimento e alteração protegida de credenciais; 50 testes locais e verificações remotas de permissões/conservação dos dados. Registro de e-mails em EMAILS-PILOTO.md. A implementação atual está descrita em `GESTAO.md` e em `SPRINTS.md`. Calendário mensal e registro revisado permanecem nas respectivas sprints propostas. A matriz completa entre contas/dispositivos e trocas reais de credenciais permanece em UX-06.
+Foram projetados fluxos, telas, regras, dependências e critérios de aceite. UX-01 atualiza contas, permissões, provisionamento de perfil, lista do dono e troca de área. UX-02 separa apresentação, acesso e app, implementa cadastro completo e recuperação; SMTP/modelos ativos e links de confirmação/recuperação validados, incluindo nova conta de treinador e leitura remota de suas permissões. UX-03 entrega perfil comum, fotos privadas, nascimento e alteração protegida de credenciais; 50 testes locais e verificações remotas de permissões/conservação dos dados. Registro de e-mails em EMAILS-PILOTO.md. A implementação atual está descrita em `GESTAO.md` e em `SPRINTS.md`. UX-04 entrega calendário mensal e agenda para atleta/equipe autorizada, com estados por relato, múltiplas sessões, versões separadas, 56 testes e conferência local mobile. Nenhuma escrita no banco remoto nesta sprint. O registro revisado permanece em UX-05. A matriz completa entre contas/dispositivos e trocas reais de credenciais permanece em UX-06.
 
 Aceite de UX-01: 30 testes locais passaram. O banco remoto confirmou quatro perfis/listagem do dono e preservou um plano, 39 sessões e uma atividade. A promoção da conta com plano foi validada sob os papéis reais em transação revertida: áreas atleta/treinador disponíveis, plano e atividade pessoais preservados, sem privilégio de admin ou prescrição automática para si. Não foi concedido um papel novo de forma persistente durante o teste. O advisor de segurança não apontou problema novo; permanece o aviso anterior de proteção contra senhas vazadas, dependente do plano contratado.
