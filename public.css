@@ -7,3 +7,5 @@ html{scroll-behavior:smooth}a{text-underline-offset:4px}.public-header{max-width
 @media(max-width:350px){.help-main{padding:0 16px 32px}.help-page .compact-cta{font-size:12px;gap:10px}.help-topics{gap:8px}.help-topics a{padding:9px 12px}}
 
 .help-page .brand,.help-page .public-footer>a{display:inline-flex;align-items:center;min-height:44px}
+
+.help-page .brand{gap:6px}
