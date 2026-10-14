@@ -2,6 +2,47 @@
   command = "npm run build"
   publish = "dist"
 
+[[redirects]]
+  from = "/app"
+  to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/entrar"
+  to = "/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/criar-conta"
+  to = "/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/verifique-seu-email"
+  to = "/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/confirmar-email"
+  to = "/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/recuperar-senha"
+  to = "/auth.html"
+  status = 200
+
+[[redirects]]
+  from = "/redefinir-senha"
+  to = "/auth.html"
+  status = 200
+
+[[headers]]
+  for = "/auth.html"
+  [headers.values]
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
 [[headers]]
   for = "/*"
   [headers.values]

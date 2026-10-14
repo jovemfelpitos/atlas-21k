@@ -1,5 +1,7 @@
 # Gestão de treinos no Atlas Run
 
+A página inicial apresenta o Atlas. Use **Entrar** para acessar `/entrar` e **Criar conta** para informar nome completo, e-mail, senha, repetição e área inicial. Confirme o e-mail antes de entrar. O app fica em `/app`; login e cadastro têm telas próprias. **Esqueci minha senha** abre a solicitação de link; a nova senha é definida pela página validada de recuperação. A configuração de envio externo está no guia EMAILS-PILOTO.md e precisa ser concluída para esses e-mails funcionarem para todos os destinatários.
+
 Uma conta pode usar as áreas **Atleta** e **Treinador**, com o mesmo e-mail, senha e histórico pessoal. Use **Trocar área**, acima da navegação, ou os botões de áreas no Perfil. A área **Admin dono** aparece somente para contas autorizadas. Contas já existentes com e-mails diferentes continuam separadas. Ao mudar permissões, sincronize os dados.
 
 ## Para o dono
@@ -41,4 +43,4 @@ Clique em **Ver relato e comentários** para consultar esforço, dor, recuperaç
 
 O atleta vê comentários em **Treino**, **Calendário** e **Evolução**, inclusive quando a sessão ainda não tem relato, e pode exportá-los junto com seus dados. Seus registros só podem ser editados por ele; o admin dono e treinadores ativos vinculados podem consultá-los. O resumo organiza as informações relatadas, sem avaliar clinicamente ou mudar a prescrição.
 
-Cadastro separado com escolha inicial de área, landing, recuperação de senha e SMTP próprio pertencem à próxima sprint UX-02. O SMTP padrão atual continua limitado aos endereços autorizados da organização.
+Landing, acesso separado, escolha inicial de área e recuperação foram implementados em UX-02. O SMTP padrão atual continua limitado aos endereços autorizados da organização; SMTP próprio e a validação de entrega estão pendentes. A área inicial de treinador abre sem atletas vinculados. A conta que já tem histórico mantém sua última área ao entrar novamente.

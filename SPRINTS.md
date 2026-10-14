@@ -2,7 +2,7 @@
 
 ## Próximo ciclo: revisão de experiência
 
-Planejamento de 12/10/2026 em [PLANEJAMENTO-UX.md](PLANEJAMENTO-UX.md): conta única com áreas atleta/treinador, gestão de usuários, landing, acesso e recuperação, perfil, calendário e registro. UX-01 foi implementada em 13/10/2026; UX-02 a UX-06 permanecem planejadas. Ao final desse ciclo será decidida a execução das antigas sprints 5 (biblioteca), 6 (equipes) e 7 (cobrança).
+Planejamento de 12/10/2026 em [PLANEJAMENTO-UX.md](PLANEJAMENTO-UX.md): conta única com áreas atleta/treinador, gestão de usuários, landing, acesso e recuperação, perfil, calendário e registro. UX-01 foi implementada em 13/10/2026; UX-02 tem frontend/banco implementados em 14/10/2026 e aguarda SMTP/validação de e-mails. UX-03 a UX-06 permanecem planejadas. Ao final desse ciclo será decidida a execução das antigas sprints 5 (biblioteca), 6 (equipes) e 7 (cobrança).
 
 O contrato exclusivo abaixo é o registro histórico das sprints 0 a 4. UX-01 o substitui por áreas cumulativas: relato pessoal permanece editável pelo próprio usuário mesmo quando também é treinador/dono, e gestão de terceiros continua restrita aos vínculos ou ao dono. Consulte o manual atualizado em GESTAO.md.
 
@@ -69,3 +69,9 @@ Aceite da sprint 4: 25 testes locais passaram (cálculos, interface e PostgreSQL
 Migração `atlas_run_ux01_accounts_and_areas`, gerada pelo CLI e mantida em `supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql`. Perfil automático e regularização idempotente; metadados do usuário não autorizam papéis. Listagem paginada de contas/confirmação/e-mail exclusiva do dono, áreas cumulativas, ativação pessoal limitada de treinador, bloqueio da reativação após desativação pelo dono e preferência de área sem poder de autorização. A lista Usuários permite ativar um atleta com planos/rascunhos. Treinadores podem ser atletas vinculados a outros treinadores. Atividades pessoais continuam editáveis somente pelo titular, inclusive com duas áreas. Prescrições publicadas, versões, registros e comentários mantêm seus IDs.
 
 Aceite: 30 testes locais, build público de 17 arquivos e interface de gestão conferida em viewport mobile. Verificação remota da lista do dono e promoção do atleta com plano em transação revertida; quatro perfis, um plano, 39 sessões, uma atividade e um treinador persistido após a verificação. Testes completos com login em dispositivos reais permanecem em UX-06. Landing, cadastro separado, escolha inicial de área e recuperação de senha continuam em UX-02.
+
+## UX-02 — apresentação, acesso e recuperação · e-mails pendentes
+
+Landing e formulários separados, nome/e-mail/senha/repetição/área no cadastro, mostrar/ocultar senha, confirmação/reenvio, recuperação neutra e redefinição com link validado; retornos externos ao app recusados. Credenciais de recuperação ficam somente em memória. Retornos antigos para a raiz continuam funcionando. Onboarding concede no máximo a capacidade pessoal de treinador e mantém bloqueios do dono, sem vínculos automáticos ou admin. Contas anteriores preservam nome, área e histórico. Migração nova aplicada, quatro contas/perfis e plano de 39 sessões/uma atividade preservados. 39 testes locais passaram, incluindo interface de acesso, RLS/onboarding, sessão expirada e a regressão de gestão. Build público com 23 arquivos, fontes privadas excluídas. Interface e grade de cadastro conferidas em 390/320 px sem rolagem horizontal.
+
+Pendente para concluir: conta/remetente/SMTP no Brevo escolhido para o piloto, limite de senha do serviço alinhado a 8 caracteres, templates de e-mail e teste real de confirmação/recuperação em endereço externo. Guia de configuração em EMAILS-PILOTO.md. Não houve contratação ou desativação da confirmação de e-mail.

@@ -5,14 +5,14 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parsePlan} from '../importer.js';
 import {createManagement} from '../management.js';
-import {consumeAuthCallback} from '../auth-callback.js';
+import {safeNext} from '../auth-client.js';
 import {accountAreas,areaLabels} from '../account-areas.js';
 import {readRows, monitoringRows, summaryHTML, commentsHTML} from '../monitoring.js';
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
+const html=readFileSync(new URL('../app.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
 const tick=()=>new Promise(r=>setTimeout(r,20));
-async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false}={}){
- const w=new Window({url:'http://localhost/'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
+async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false,expired=false}={}){
+ const w=new Window({url:'http://localhost/app'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
  const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin};
  const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
  const plan={...doc,state:'published',version:1,id:'plan-1',published_by:'coach-private-id',source_draft_id:'draft-private-id',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
@@ -22,6 +22,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  let coachStatus=coach?'active':'none';
  w.fetch=async(url,options)=>{calls.push({url,options});let data=[];
  if(url.includes('/auth/v1/signup'))data={user:{id}};
+ else if(url.includes('/auth/v1/user')){if(expired)return new Response(JSON.stringify({error_code:'bad_jwt',message:'JWT expired'}),{status:401});data={id,user_metadata:{account_type:coach?'coach':'athlete'}};}
  else if(url.includes('/auth/v1/token'))data={access_token:'test',expires_in:3600,user:{id}};
  else if(url.includes('atlas_enable_coach')){coachStatus='active';data={active:true};}
  else if(url.includes('atlas_access_context'))data={role:admin?'admin':coachStatus!=='none'?'coach':'athlete',active:coachStatus!=='inactive',coach_status:coachStatus,areas:['athlete',...(coachStatus==='active'?['coach']:[]),...(admin?['admin']:[])],preferred_area:profile.preferred_area||(admin?'admin':coach?'coach':'athlete')};
@@ -34,7 +35,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_activity_records')){if(options.method==='POST'||options.method==='PATCH'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[{...rows[0],...JSON.parse(options.body)}];}data=rows;}
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,navigator:w.navigator,parsePlan,createManagement,consumeAuthCallback,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,navigator:w.navigator,parsePlan,createManagement,safeNext,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
@@ -48,12 +49,15 @@ test('athlete form keeps failed fields, saves and edits exact session, exports n
  await h.click('[data-view=profile]');await h.submit('#profileForm');assert.match(d.querySelector('#profileError').textContent,/salvo/);
  assert.ok(h.calls.some(c=>c.options.method==='PATCH'));await h.w.happyDOM.close();
 });
-test('signup confirmation, password sign-in and logout with simulated Auth responses',async()=>{
- const h=await harness({loggedIn:false}),d=h.w.document;await h.click('#account');const f=d.querySelector('#authForm');f.elements.email.value='teste@example.com';f.elements.password.value='senha-de-teste';await h.click('#signup');assert.match(d.querySelector('#authError').textContent,/Confirme/);assert.equal(h.w.localStorage.getItem('atlas-session'),null);
- await h.submit('#authForm');assert.match(d.querySelector('#notice').textContent,/sincronizados/);assert.equal(d.querySelector('#sync').hidden,false);assert.equal(d.querySelector('#areaSelect').disabled,false);await h.click('#account');assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.equal(d.querySelector('#sync').hidden,true);assert.match(d.querySelector('#content').textContent,/crie sua conta/);await h.w.happyDOM.close();
+test('private app without a session redirects to the separate login; logout clears private state',async()=>{
+ const h=await harness({loggedIn:false});assert.match(h.w.location.href,/\/entrar\?next=%2Fapp/);assert.equal(h.w.document.querySelector('#appMain').hidden,true);assert.equal(h.w.document.querySelector('#authForm'),null);await h.w.happyDOM.close();
+ const logged=await harness();await logged.click('#account');assert.equal(logged.w.localStorage.getItem('atlas-session'),null);assert.equal(logged.w.document.querySelector('#appMain').hidden,true);assert.match(logged.w.location.href,/\/entrar$/);await logged.w.happyDOM.close();
 });
 test('owner boot enters management with team controls and no record actions',async()=>{
  const h=await harness({admin:true}),d=h.w.document;assert.equal(d.querySelector('nav').hidden,true);assert.match(d.querySelector('#content').textContent,/Admin dono/);assert.ok(d.querySelector('[data-page=team]'));assert.equal(d.querySelectorAll('[data-record]').length,0);await h.w.happyDOM.close();
+});
+test('expired app access clears the old session and returns to login without showing private data',async()=>{
+ const h=await harness({expired:true});try{assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.match(h.w.location.href,/reason=expired/);assert.equal(h.w.document.querySelector('#appMain').hidden,true);assert.equal(h.w.document.querySelectorAll('[data-record]').length,0);}finally{await h.w.happyDOM.close();}
 });
 
 test('coach switches to personal athlete records without another login; revoked area falls back safely',async()=>{

@@ -1,8 +1,8 @@
 # Atlas Run — revisão de experiência e próximos ciclos
 
-Status: UX-01 implementada em 13/10/2026; UX-02 a UX-06 permanecem planejadas.
+Status: UX-01 implementada; UX-02 com frontend/banco implementados em 14/10/2026, aguardando configuração e validação de e-mails. UX-03 a UX-06 permanecem planejadas.
 
-Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Somente UX-01 foi executada até agora; telas próprias de acesso, recuperação, perfil completo, calendário mensal e revisão do registro continuam nas próximas entregas.
+Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing e telas próprias de acesso/recuperação já foram implementadas. SMTP próprio aguarda configuração pelo dono e teste de entrega real. Perfil completo, calendário mensal e revisão do registro continuam nas próximas entregas.
 
 ## 1. Objetivo e direção do produto
 
@@ -303,6 +303,6 @@ Questões para decidir em UX-06, com experiência de uso: quem será o primeiro 
 
 ## 10. Limite desta entrega de planejamento
 
-Foram projetados fluxos, telas, regras, dependências e critérios de aceite. UX-01 já atualiza contas, permissões, provisionamento de perfil, lista do dono e troca de área. A implementação atual está descrita em `GESTAO.md` e em `SPRINTS.md`. Configuração de e-mails, armazenamento de fotos, telas próprias de acesso, calendário mensal e registro revisado permanecem nas respectivas sprints propostas.
+Foram projetados fluxos, telas, regras, dependências e critérios de aceite. UX-01 atualiza contas, permissões, provisionamento de perfil, lista do dono e troca de área. UX-02 separa apresentação, acesso e app, implementa cadastro completo e recuperação; guia SMTP preparado em EMAILS-PILOTO.md, com entrega real ainda pendente. A implementação atual está descrita em `GESTAO.md` e em `SPRINTS.md`. Armazenamento de fotos, perfil completo, calendário mensal e registro revisado permanecem nas respectivas sprints propostas.
 
 Aceite de UX-01: 30 testes locais passaram. O banco remoto confirmou quatro perfis/listagem do dono e preservou um plano, 39 sessões e uma atividade. A promoção da conta com plano foi validada sob os papéis reais em transação revertida: áreas atleta/treinador disponíveis, plano e atividade pessoais preservados, sem privilégio de admin ou prescrição automática para si. Não foi concedido um papel novo de forma persistente durante o teste. O advisor de segurança não apontou problema novo; permanece o aviso anterior de proteção contra senhas vazadas, dependente do plano contratado.

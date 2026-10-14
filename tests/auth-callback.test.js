@@ -11,3 +11,8 @@ test('expired, erroneous and incomplete callbacks cannot create sessions',async(
  await assert.rejects(consumeAuthCallback({...loc,hash:'#access_token=test&refresh_token=r'},history,async()=>{throw Error('JWT inválido');}),/JWT inválido/);
  assert.equal(await consumeAuthCallback({...loc,hash:''},history,()=>{}),null);
 });
+test('hashed email links verify the one-time token for its purpose and remove it before network access',async()=>{
+ let cleaned=false;const calls=[];
+ const result=await consumeAuthCallback({pathname:'/redefinir-senha',search:'?token_hash=one-time&type=recovery&next=%2Fapp',hash:''},{replaceState(a,b,path){assert.equal(path,'/redefinir-senha?next=%2Fapp');cleaned=true;}},async(path,options)=>{assert.equal(cleaned,true);calls.push(path);if(path==='/auth/v1/verify'){assert.deepEqual(JSON.parse(options.body),{token_hash:'one-time',type:'recovery'});return {access_token:'signed',refresh_token:'refresh',expires_in:3600};}return {id:'owner-of-link'};},{expectedType:'recovery'});
+ assert.deepEqual(calls,['/auth/v1/verify','/auth/v1/user']);assert.equal(result.auth_type,'recovery');assert.equal(result.user.id,'owner-of-link');
+});
