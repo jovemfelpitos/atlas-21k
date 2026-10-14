@@ -9,10 +9,10 @@ const status = value => ({draft: 'Rascunho', published: 'Publicado', archived: '
 const field = (label, key, value, type = 'text', extras = '') => `<label>${esc(label)}<input data-field="${key}" type="${type}" value="${esc(value)}" ${extras}></label>`;
 const area = (label, key, value, max) => `<label>${esc(label)}<textarea data-field="${key}" rows="3" maxlength="${max}">${esc(value)}</textarea></label>`;
 
-export function createManagement({root, role, enabled = true, userId, request, notice, saveProfile, accountControls = () => '', enableCoach}) {
+export function createManagement({root, role, enabled = true, userId, request, notice, saveProfile, accountControls = () => '', enableCoach, renderProfile, profileState=()=>({}), initialPage='overview'}) {
  let people = [], coaches = [], links = [], plans = [], drafts = [], events = [], records = [], comments = [];
  let monitor = {athlete:'',plan:'',from:'',to:'',state:'all',history:false}, inspected = null, commentDraft = {id:null,text:''};
- let page = 'overview', selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
+ let page = initialPage, selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
  let dirty = false, busy = false, preview = 'list', pending = null;
  let users = [], usersTotal = 0, usersSearch = '', usersFilter = 'all', usersOffset = 0;
  const owner = role === 'admin';
@@ -127,6 +127,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   return `<h2>Usuários</h2><p>Uma conta pode ser atleta e treinador. Ativar ou desativar a gestão preserva os treinos pessoais e o histórico.</p><form id="usersSearchForm"><label>Buscar por nome ou e-mail<input name="search" type="search" maxlength="120" value="${esc(usersSearch)}"></label><button type="submit">Buscar usuários</button></form><div class="user-filters">${[['all','Todos'],['athletes','Atletas'],['coaches','Treinadores'],['pending','Pendências']].map(([key,label])=>`<button data-users-filter="${key}" aria-pressed="${usersFilter===key}">${label}</button>`).join('')}</div><p>${usersTotal} usuário(s) encontrado(s)</p>${users.map(p=>`<article class="card"><h3>${esc(p.name)}</h3><p>${esc(p.email||'E-mail não informado')}</p><p>Atleta${p.coach_status==='none'?'':p.coach_status==='active'?' · Treinador ativo':' · Treinador desativado'}${p.is_admin?' · Admin dono':''}</p><p>${p.email_confirmed?'E-mail confirmado':'Aguardando confirmação de e-mail'}${p.profile_ready?'':' · Perfil pendente'}</p><div class="actions">${!p.profile_ready?`<button data-repair-profile="${esc(p.user_id)}">Regularizar perfil</button>`:p.coach_status==='none'?`<button data-activate-coach="${esc(p.user_id)}" ${p.email_confirmed?'':'disabled'}>Ativar treinador</button>`:`<button data-coach="${esc(p.user_id)}" data-enabled="${p.coach_status!=='active'}" ${!p.email_confirmed&&p.coach_status!=='active'?'disabled':''}>${p.coach_status==='active'?'Desativar gestão':'Reativar treinador'}</button>`}${p.profile_ready?`<button data-athlete="${esc(p.user_id)}">Ver atleta e vínculos</button>`:''}</div></article>`).join('')||'<p>Nenhum usuário encontrado neste filtro.</p>'}<div class="actions"><button data-users-offset="${Math.max(0,usersOffset-25)}" ${usersOffset===0?'disabled':''}>Anterior</button><button data-users-offset="${usersOffset+25}" ${usersOffset+users.length>=usersTotal?'disabled':''}>Próxima</button></div>`;
  }
  function profilePage() {
+  if(renderProfile)return '<div id="profilePanel"></div>';
   const p = people.find(p => p.user_id === userId);
   return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Área atual: ${owner ? 'admin dono' : 'treinador'}. Troque para Atleta para consultar e registrar seus treinos pessoais na mesma conta.</p>${accountControls()}`;
  }
@@ -134,6 +135,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key==='monitoring') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
+  if(renderProfile)renderProfile(page==='staffProfile'?root.querySelector('#profilePanel'):null);
  }
  function capture() {
   if (!editor || page !== 'editor') return;
@@ -149,6 +151,8 @@ export function createManagement({root, role, enabled = true, userId, request, n
   pending = action; root.querySelector('#managementDialog').showModal();
  }
  function navigate(action) {
+  if(profileState().busy)return;
+  if(profileState().dirty){message('Salve ou descarte as alterações do perfil antes de sair.');return;}
   if (dirty) dialog('Descartar alterações não salvas?', '<p>O conteúdo já salvo continuará disponível. As alterações desta tela serão descartadas.</p>', 'Descartar e continuar', async () => {dirty = false; commentDraft={id:null,text:''}; action();});
   else action();
  }
@@ -200,7 +204,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
  });
  listen('click', async e => {
   const b = e.target.closest('button'); if (!b || busy) return;
-  if (b.hasAttribute('data-enable-coach')) {await command(async()=>{await enableCoach?.();});return;}
+  if (b.hasAttribute('data-enable-coach')) {if(profileState().busy||profileState().dirty){message('Salve ou descarte as alterações do perfil antes de ativar outra área.');return;}await command(async()=>{await enableCoach?.();});return;}
   if (b.dataset.usersFilter) {await command(async()=>{usersFilter=b.dataset.usersFilter;usersOffset=0;await loadUsers();render();});return;}
   if (b.dataset.usersOffset!==undefined) {await command(async()=>{usersOffset=Number(b.dataset.usersOffset);await loadUsers();render();});return;}
   if (b.dataset.repairProfile) {await command(async()=>{await rpc('atlas_ensure_profile',{account:b.dataset.repairProfile});await refresh();message('Perfil regularizado. A conta e o histórico foram preservados.');});return;}
@@ -228,5 +232,5 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (b.dataset.preview) {capture(); preview = b.dataset.preview; render(); return;}
   if (b.id === 'addSession' || b.id === 'addGuide' || b.dataset.removeSession !== undefined || b.dataset.removeGuide !== undefined) {capture(); if (b.id === 'addSession') editor.document.sessions.push(newSession(editor.document.sessions)); if (b.id === 'addGuide') editor.document.guide.push({tema: '', orientacao: ''}); if (b.dataset.removeSession !== undefined) editor.document.sessions.splice(Number(b.dataset.removeSession), 1); if (b.dataset.removeGuide !== undefined) editor.document.guide.splice(Number(b.dataset.removeGuide), 1); dirty = true; render();}
  });
- return {load, render, destroy() {listeners.forEach(([type, handler]) => root.removeEventListener(type, handler));}, get busy() {return busy;}, get dirty() {return dirty;}};
+ return {load, render, updateProfile(value){people=people.map(person=>person.user_id===value.user_id?value:person);}, destroy() {listeners.forEach(([type, handler]) => root.removeEventListener(type, handler));}, get busy() {return busy||!!profileState().busy;}, get dirty() {return dirty||!!profileState().dirty;}};
 }

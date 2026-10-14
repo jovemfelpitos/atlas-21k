@@ -37,6 +37,7 @@ export async function createAuthPage({window:w,client=createAuthClient(w.ATLAS_C
   const resetting=path==='/redefinir-senha';heading(resetting?'Validando seu link':'Confirmando seu e-mail','Só mais um instante.');
   try{
    const confirmed=await consumeAuthCallback(w.location,w.history,client.request,{expectedType:resetting?'recovery':'signup'});
+   if(!confirmed&&!resetting&&callbackQuery.get('flow')==='email-change'){heading('Confirme a troca nos dois endereços','Abra os links enviados ao e-mail atual e ao novo. Depois, volte ao perfil para conferir a alteração.');$('#authContent').innerHTML='<a class="primary button-link" href="/app?view=profile">Voltar ao meu perfil</a>';return {client};}
    if(!confirmed)throw Error(resetting?'Abra o link de recuperação recebido por e-mail.':'Abra o link de confirmação recebido por e-mail.');
    if(resetting){recovery=confirmed;heading('Escolha sua nova senha',confirmed.user.email?'Nova senha para '+confirmed.user.email+'.':'Defina uma senha para voltar à sua conta.');$('#authContent').innerHTML=formHTML(`${passwordField('Nova senha','password')}${passwordField('Repetir nova senha','passwordConfirm')}<p id="passwordHint" class="field-hint">Use pelo menos 8 caracteres. Prefira uma senha longa e exclusiva.</p>`,'Salvar nova senha');}
    else{client.setSession(confirmed);await enterApp();}

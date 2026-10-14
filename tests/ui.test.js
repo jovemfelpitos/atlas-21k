@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import {parsePlan} from '../importer.js';
 import {createManagement} from '../management.js';
 import {safeNext} from '../auth-client.js';
+import {createAvatarStore,createProfileEditor,initials} from '../profile.js';
 import {accountAreas,areaLabels} from '../account-areas.js';
 import {readRows, monitoringRows, summaryHTML, commentsHTML} from '../monitoring.js';
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
@@ -35,7 +36,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_activity_records')){if(options.method==='POST'||options.method==='PATCH'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[{...rows[0],...JSON.parse(options.body)}];}data=rows;}
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,navigator:w.navigator,parsePlan,createManagement,safeNext,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,navigator:w.navigator,parsePlan,createManagement,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
@@ -46,8 +47,19 @@ test('athlete form keeps failed fields, saves and edits exact session, exports n
  await h.click('[data-record="sessao-001"]');assert.equal(f.elements.km.value,'3.25');f.elements.recovery.value='Normal';await h.submit('#recordForm');assert.equal(h.rows[0].recovery,'Normal');
  await h.click('[data-view=progress]');assert.match(d.querySelector('#content').textContent,/3,25/);assert.equal(d.querySelectorAll('[data-record]').length,1);
  await h.click('#export');const exported=JSON.parse(await h.blobs[0].text());assert.equal(exported.plans.length,1);assert.equal(exported.records.length,1);assert.equal(exported.plans[0].guide.length,1);assert.ok(!JSON.stringify(exported).includes('user_id'));assert.ok(!JSON.stringify(exported).includes('access_token'));assert.ok(!JSON.stringify(exported).includes('coach-private-id'));assert.ok(!JSON.stringify(exported).includes('draft-private-id'));
- await h.click('[data-view=profile]');await h.submit('#profileForm');assert.match(d.querySelector('#profileError').textContent,/salvo/);
+ await h.click('[data-view=profile]');await h.submit('#profileForm');assert.match(d.querySelector('#profileStatus').textContent,/salvo/);
  assert.ok(h.calls.some(c=>c.options.method==='PATCH'));await h.w.happyDOM.close();
+});
+
+test('the common profile preserves unsaved fields and saved identity across athlete and coach areas',async()=>{
+ const h=await harness({coach:true}),d=h.w.document;
+ try{
+  await h.click('[data-page=staffProfile]');let form=d.querySelector('#profileForm');assert.ok(form.elements.birth_date);assert.ok(d.querySelector('#profilePasswordForm'));form.elements.name.value='Nome compartilhado';
+  await h.click('[data-page=overview]');assert.equal(d.querySelector('#profileForm'),form);assert.match(d.querySelector('#managementError').textContent,/Salve ou descarte/);
+  await h.submit('#profileForm');assert.equal(d.querySelector('#accountName').textContent,'Nome compartilhado');await h.area('athlete');await h.click('[data-view=profile]');form=d.querySelector('#profileForm');assert.equal(form.elements.name.value,'Nome compartilhado');
+  form.elements.birth_date.value='2000-03-04';await h.area('coach');assert.equal(d.querySelector('#areaSelect').value,'athlete');assert.equal(form.elements.birth_date.value,'2000-03-04');
+  await h.click('#discardProfile');await h.area('coach');await h.click('[data-page=staffProfile]');assert.equal(d.querySelector('#profileForm').elements.name.value,'Nome compartilhado');
+ }finally{await h.w.happyDOM.close();}
 });
 test('private app without a session redirects to the separate login; logout clears private state',async()=>{
  const h=await harness({loggedIn:false});assert.match(h.w.location.href,/\/entrar\?next=%2Fapp/);assert.equal(h.w.document.querySelector('#appMain').hidden,true);assert.equal(h.w.document.querySelector('#authForm'),null);await h.w.happyDOM.close();

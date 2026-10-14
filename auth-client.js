@@ -11,6 +11,8 @@ export function authError(error){
  if(error.status===429||['over_email_send_rate_limit','over_request_rate_limit'].includes(error.code))return 'Aguarde um pouco antes de tentar novamente.';
  if(error.code==='invalid_credentials')return 'E-mail ou senha incorretos.';
  if(error.code==='email_not_confirmed')return 'Confirme seu e-mail para entrar. Você pode pedir um novo link.';
+ if(['current_password_required','current_password_mismatch'].includes(error.code))return 'Confira sua senha atual e tente novamente.';
+ if(['email_exists','user_already_exists'].includes(error.code))return 'Não foi possível usar esse e-mail. Confira o endereço ou entre com a conta existente.';
  if(['weak_password','same_password'].includes(error.code))return error.code==='same_password'?'Escolha uma senha diferente da anterior.':'Use uma senha mais forte, com pelo menos 8 caracteres.';
  if(error.code==='otp_expired')return 'Este link expirou ou já foi usado. Peça um novo link.';
  if(error.status>=500||['email_address_not_authorized','email_rate_limit_exceeded'].includes(error.code))return 'Não foi possível concluir a solicitação agora. Tente novamente em alguns minutos.';

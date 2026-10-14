@@ -7,6 +7,11 @@ import {createAuthClient,safeNext} from '../auth-client.js';
 
 const html=readFileSync(new URL('../auth.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
 const tick=()=>new Promise(r=>setTimeout(r,20));
+
+test('partial email-change confirmation asks for both inboxes without accepting an unvalidated session',async()=>{
+ const h=await harness('/confirmar-email?flow=email-change&next=%2Fapp%3Fview%3Dprofile');
+ try{assert.match(h.w.document.querySelector('#authTitle').textContent,/dois endereços/);assert.equal(h.client.session,null);assert.equal(h.destinations.length,0);assert.equal(h.w.document.querySelector('#accessForm'),null);}finally{await h.close();}
+});
 async function harness(route='/entrar',callback={}){
  const w=new Window({url:'http://127.0.0.1:4173'+route});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
  const calls=[],destinations=[];let fail=null;

@@ -33,6 +33,12 @@ Rascunhos são visíveis somente à gestão autorizada. Publicação sempre usa 
 
 Entre com sua conta, sincronize e escolha seu plano. O plano publicado mais recente aparece primeiro, com versões arquivadas identificadas como histórico. Registre cada atividade na sessão correspondente. Perfil e relato de execução pertencem à sua conta; o treinador não edita esses registros.
 
+## Meu perfil — todas as áreas
+
+Abra **Perfil** na área de atleta ou **Meu perfil** na gestão. Edite nome, data de nascimento opcional e dias disponíveis; depois use **Salvar perfil**. Uma data futura não é aceita. O nome e a foto são os mesmos ao trocar de área, mantendo o histórico. **Escolher foto** aceita JPG, PNG ou WebP de até 8 MB e ajusta a imagem para um quadrado. **Remover foto** volta às iniciais. Sua foto e nascimento ficam acessíveis somente a você, ao dono e à equipe autorizada pelos vínculos.
+
+Em **Acesso à conta**, **Alterar e-mail** exige sua senha atual e envia uma confirmação ao endereço atual e ao novo. Conclua os dois links; até lá, seu e-mail de login permanece o anterior. Use **Conferir confirmação do e-mail** para atualizar o estado. **Alterar senha** pede a senha atual, a nova e a repetição, com no mínimo oito caracteres. Se não lembrar a atual, use **Esqueci minha senha**. Preencha senhas diretamente no site, sem compartilhá-las. Salve ou descarte alterações antes de trocar de área, sincronizar ou sair. Dados pessoais e credenciais não concedem acesso de admin nem reativam um treinador desativado pelo dono.
+
 ## Acompanhamento — dono e treinador
 
 Abra **Acompanhamento**, escolha atleta/plano, período e situação e clique em **Aplicar filtros**. Também pode abrir pelo detalhe do atleta ou do plano. O resumo compara valores prescritos e realizados por semana; valores não informados permanecem vazios. **Sem registro em data passada** indica ausência de relato em uma sessão anterior a hoje. Pendências de hoje, futuras e atividades marcadas como **não feito** têm situações próprias.
