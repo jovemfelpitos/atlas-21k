@@ -6,6 +6,7 @@ import vm from 'node:vm';
 import {parsePlan} from '../importer.js';
 import {createManagement} from '../management.js';
 import {createCalendarState,calendarHTML,handleCalendarAction} from '../calendar.js';
+import {createActivityEditor,persistActivity} from '../activity.js';
 import {safeNext} from '../auth-client.js';
 import {createAvatarStore,createProfileEditor,initials} from '../profile.js';
 import {accountAreas,areaLabels} from '../account-areas.js';
@@ -38,13 +39,13 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_activity_records')){if(options.method==='POST'||options.method==='PATCH'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[{...rows[0],...JSON.parse(options.body)}];}data=rows;}
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
 test('athlete form keeps failed fields, saves and edits exact session, exports no auth data',async()=>{
  const h=await harness(),d=h.w.document;await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');assert.equal(d.querySelectorAll('[data-record]').length,2);
- await h.click('[data-record="sessao-001"]');const f=d.querySelector('#recordForm');f.elements.km.value='3.25';f.elements.minutes.value='25';f.elements.notes.value='Teste';h.fail=true;await h.submit('#recordForm');assert.match(d.querySelector('#saveError').textContent,/campos foram mantidos/);assert.equal(f.elements.notes.value,'Teste');assert.equal(h.rows.length,0);
+ await h.click('[data-record="sessao-001"]');const f=d.querySelector('#recordForm');f.elements.session_id.value='sessao-002';f.elements.status.value='feito';f.elements.km.value='3.25';f.elements.minutes.value='25';f.elements.notes.value='Teste';h.fail=true;await h.submit('#recordForm');assert.match(d.querySelector('#saveError').textContent,/campos foram mantidos/);assert.equal(f.elements.notes.value,'Teste');assert.equal(h.rows.length,0);
  h.fail=false;await h.submit('#recordForm');assert.equal(h.rows[0].session_id,'sessao-001');assert.equal(h.rows[0].plan_id,'plan-1');assert.equal(h.rows[0].user_id,'athlete');
  await h.click('[data-record="sessao-001"]');assert.equal(f.elements.km.value,'3.25');f.elements.recovery.value='Normal';await h.submit('#recordForm');assert.equal(h.rows[0].recovery,'Normal');
  await h.click('[data-view=progress]');assert.match(d.querySelector('#content').textContent,/3,25/);assert.equal(d.querySelectorAll('[data-record]').length,1);
@@ -80,7 +81,7 @@ test('coach switches to personal athlete records without another login; revoked 
   assert.equal(d.querySelector('#areaSelect').value,'coach');assert.ok(d.querySelector('.management'));const initial=h.w.localStorage.getItem('atlas-session');
   await h.area('athlete');assert.equal(d.querySelector('#areaSelect').value,'athlete');assert.equal(d.querySelector('.management'),null);assert.equal(h.w.localStorage.getItem('atlas-session'),initial);
   assert.ok(h.calls.some(c=>c.url.includes('atlas_plans')&&c.url.includes('user_id=eq.athlete')));
-  await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record="sessao-001"]');d.querySelector('#recordForm').elements.km.value='4';await h.submit('#recordForm');assert.equal(h.rows[0].user_id,'athlete');
+  await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record="sessao-001"]');d.querySelector('#recordForm').elements.status.value='feito';d.querySelector('#recordForm').elements.km.value='4';await h.submit('#recordForm');assert.equal(h.rows[0].user_id,'athlete');
   await h.area('coach');assert.equal(d.querySelectorAll('[data-record]').length,0);h.coachStatus='inactive';await h.click('#sync');assert.equal(d.querySelector('#areaSelect').value,'athlete');assert.equal(d.querySelector('#areaSelect option[value=coach]'),null);
   await h.click('[data-view=profile]');assert.match(d.querySelector('.account-areas').textContent,/desativado pelo dono/);assert.equal(d.querySelector('[data-enable-coach]'),null);
  }finally{await h.w.happyDOM.close();}
@@ -125,5 +126,17 @@ test('monthly calendar saves one of two sessions, keeps location and separates h
   const select=d.querySelector('#planSelect');select.value='old';select.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();
   assert.equal(d.querySelectorAll('.calendar-status.done').length,0);assert.equal(d.querySelectorAll('.calendar-status.pending').length,2);assert.equal(d.querySelectorAll('[data-record]').length,0);assert.match(d.querySelector('.calendar-day-detail').textContent,/Plano arquivado/);
   select.value='plan-1';select.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();assert.equal(d.querySelector('[data-cal-filter=done]').getAttribute('aria-pressed'),'true');assert.equal(d.querySelectorAll('[data-record]').length,1);
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('unsaved activity fields block navigation, area changes, sync and unload until explicitly discarded',async()=>{
+ const h=await harness({coach:true}),d=h.w.document;
+ try{
+  await h.area('athlete');await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record=sessao-001]');const form=d.querySelector('#recordForm');form.elements.notes.value='Texto em andamento';
+  await h.area('coach');assert.equal(d.querySelector('#areaSelect').value,'athlete');assert.equal(d.querySelector('#activityDiscard').hidden,false);assert.equal(form.elements.notes.value,'Texto em andamento');
+  const before=h.calls.length;await h.click('#sync');assert.equal(h.calls.length,before);await h.click('[data-view=progress]');assert.ok(d.querySelector('.training-calendar'));
+  const event=new h.w.Event('beforeunload',{cancelable:true});h.w.dispatchEvent(event);assert.equal(event.defaultPrevented,true);
+  await h.click('#keepActivity');assert.equal(d.querySelector('#recordDialog').open,true);await h.click('[data-close=recordDialog]');await h.click('#discardActivity');assert.equal(d.querySelector('#recordDialog').open,false);
+  await h.area('coach');assert.equal(d.querySelector('#areaSelect').value,'coach');assert.equal(h.rows.length,0);
  }finally{await h.w.happyDOM.close();}
 });

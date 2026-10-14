@@ -1,6 +1,6 @@
 # Gestão de treinos no Atlas Run
 
-A página inicial apresenta o Atlas. Use **Entrar** para acessar `/entrar` e **Criar conta** para informar nome completo, e-mail, senha, repetição e área inicial. Confirme o e-mail antes de entrar. O app fica em `/app`; login e cadastro têm telas próprias. **Esqueci minha senha** abre a solicitação de link; a nova senha é definida pela página validada de recuperação. A configuração de envio externo está no guia EMAILS-PILOTO.md e precisa ser concluída para esses e-mails funcionarem para todos os destinatários.
+A página inicial apresenta o Atlas. Use **Entrar** para acessar `/entrar` e **Criar conta** para informar nome completo, e-mail, senha, repetição e área inicial. Confirme o e-mail antes de entrar. O app fica em `/app`; login e cadastro têm telas próprias. **Esqueci minha senha** abre a solicitação de link; a nova senha é definida pela página validada de recuperação. O envio externo do piloto está ativo; a configuração e os limites estão no guia EMAILS-PILOTO.md.
 
 Uma conta pode usar as áreas **Atleta** e **Treinador**, com o mesmo e-mail, senha e histórico pessoal. Use **Trocar área**, acima da navegação, ou os botões de áreas no Perfil. A área **Admin dono** aparece somente para contas autorizadas. Contas já existentes com e-mails diferentes continuam separadas. Ao mudar permissões, sincronize os dados.
 
@@ -32,6 +32,18 @@ Rascunhos são visíveis somente à gestão autorizada. Publicação sempre usa 
 ## Para o atleta
 
 Entre com sua conta, sincronize e escolha seu plano. O plano publicado mais recente aparece primeiro, com versões arquivadas identificadas como histórico. Registre cada atividade na sessão correspondente. Perfil e relato de execução pertencem à sua conta; o treinador não edita esses registros.
+
+## Registrar ou editar uma atividade
+
+Na sessão do treino, use **Registrar atividade** ou **Editar registro**. Confira a data, a versão do plano e o treino previsto. Escolha **Feito** (conforme previsto), **Adaptado** (com mudanças) ou **Não feito** (não realizou). A situação é obrigatória; os outros campos são opcionais. A prescrição não preenche os resultados por você. Distância e tempo aceitam vírgula ou ponto, por exemplo 3,5 km e 25,5 min.
+
+**Esforço percebido** descreve quanto esforço a atividade exigiu como um todo. **Dor** registra a maior dor sentida durante a atividade, diferente de cansaço. Os seletores oferecem **Não informei** e números inteiros de 0 a 10; 0 só entra no registro se você escolher esse valor. **Entenda a escala** abre a explicação e a referência de cada uma: [intensidade — CDC](https://www.cdc.gov/physical-activity-basics/measuring/) e [escala numérica — Cleveland Clinic, p. 7](https://my.clevelandclinic.org/-/scassets/files/org/prepare-for-surgery/pacc-brochure-15-pai-2380.ashx?la=en#page=7). A ajuda organiza seu relato; não altera o treino.
+
+Em **Não feito**, pode salvar só a situação, com um motivo opcional. Trocar a situação não apaga campos já preenchidos; confira os valores ao corrigir um relato. **Não informei** limpa uma escala; apagar distância/tempo deixa o campo vazio. Vazio e zero continuam diferentes no calendário e no acompanhamento. A recuperação anterior permanece disponível, inclusive em registros mais antigos.
+
+**Salvar atividade** mostra Salvando enquanto confirma a gravação. Aguarde a confirmação antes de fechar. Erro de conexão mantém todos os campos e permite tentar novamente. Se a resposta se perdeu depois da gravação, a nova tentativa confere o registro existente e não cria outra atividade. Se houver uma edição diferente de outra aba/dispositivo, o app recusa a substituição e mantém o formulário: preserve o texto que quiser aproveitar, feche, sincronize e confira a versão atual. Não há salvamento automático ou fila offline.
+
+**Fechar**, o botão de fechar do topo e **Escape** pedem descarte quando houver alterações. **Continuar editando** mantém o preenchimento; **Descartar e fechar** descarta só o formulário. Enquanto salva, os controles ficam bloqueados. Mudança de plano/área, sincronização, saída e fechamento da página respeitam o registro em andamento. O relato permanece separado dos comentários; a equipe consulta e comenta, e somente o atleta edita a atividade.
 
 ## Calendário e agenda
 

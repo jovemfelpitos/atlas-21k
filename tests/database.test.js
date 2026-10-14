@@ -32,6 +32,9 @@ test('PostgreSQL: RLS, account separation, session ownership and atomic imports'
  await assert.rejects(db.query("insert into public.atlas_activity_records(user_id,plan_id,session_id,status) values($1,$2,'inexistente','feito')",[A,planA]),/foreign key/);
  await assert.rejects(db.query('update public.atlas_activity_records set plan_id=$1 where session_id=$2',[planB,'sessao-001']),/foreign key/);
  await db.query("update public.atlas_activity_records set recovery='Normal' where session_id='sessao-001'");
+ await db.query("update public.atlas_activity_records set effort=0,pain=null,km=null,minutes=0 where session_id='sessao-001'");
+ const report=(await db.query("select effort,pain,km,minutes from public.atlas_activity_records where session_id='sessao-001'")).rows[0];assert.equal(report.effort,0);assert.equal(report.pain,null);assert.equal(report.km,null);assert.equal(Number(report.minutes),0);
+ await assert.rejects(db.query("update public.atlas_activity_records set effort=11 where session_id='sessao-001'"),/check constraint/);await assert.rejects(db.query("update public.atlas_activity_records set pain=-1 where session_id='sessao-001'"),/check constraint/);
  await actor(B);assert.equal((await db.query('select * from public.atlas_activity_records')).rows.length,0);
  assert.equal((await db.query("update public.atlas_activity_records set km=99 where user_id=$1 returning *",[A])).rows.length,0);
  await actor(ADMIN);assert.equal((await db.query('select * from public.atlas_activity_records')).rows.length,0);
