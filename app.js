@@ -13,21 +13,26 @@ let accessState={areas:['athlete'],selected:'athlete',coachStatus:'none'},loadin
 try{session=JSON.parse(localStorage.getItem('atlas-session')||'null')}catch{}
 const configured=()=>{if(!/^https:\/\/[^/]+\.supabase\.co\/?$/.test(cfg.supabaseUrl))return false;if(cfg.supabaseKey?.startsWith('sb_publishable_'))return true;try{return JSON.parse(atob(cfg.supabaseKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).role==='anon';}catch{return false;}};
 function keepSession(s){session=s;if(s)localStorage.setItem('atlas-session',JSON.stringify(s));else localStorage.removeItem('atlas-session');}
-let refresh=null;
+let refresh=null,sessionVersion=0;
+const pendingRequests=new Set();
+const changedSession=()=>Object.assign(Error('A sessão mudou em outra aba. Entre novamente.'),{code:'local_session_changed',status:401});
 async function request(path,options={},token=true){
+ const version=sessionVersion;
  if(!configured())throw Error('Configure a URL e a chave pública do Supabase.');
- if(token){if(!session)throw Error('Entre na sua conta.');if(session.expires_at<Date.now()/1000+60){if(!refresh)refresh=request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})},false).then(r=>keepSession({...r,expires_at:Date.now()/1000+r.expires_in})).finally(()=>refresh=null);await refresh;}}
+ if(token){if(!session)throw Error('Entre na sua conta.');if(!Number.isFinite(session.expires_at)||session.expires_at<Date.now()/1000+60){if(!refresh)refresh=request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})},false).then(r=>{if(version!==sessionVersion)throw changedSession();keepSession({...r,expires_at:Date.now()/1000+r.expires_in});}).finally(()=>refresh=null);await refresh;}}
+ if(version!==sessionVersion)throw changedSession();
  const {responseType,...fetchOptions}=options;
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);pendingRequests.add(controller);
  try{
  const res=await fetch(cfg.supabaseUrl.replace(/\/$/,'')+path,{...fetchOptions,signal:controller.signal,headers:{apikey:cfg.supabaseKey,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+session.access_token}:{}),...options.headers}});
- if(res.ok&&responseType==='blob')return res.blob();
- const text=await res.text();let data;try{data=text?JSON.parse(text):null}catch{throw Error('Resposta inesperada do servidor.');}if(!res.ok){const error=Error(data?.msg||data?.message||data?.error_description||'Falha no servidor.');error.code=data?.error_code||data?.code;error.status=res.status;throw error;}return data;
- }finally{clearTimeout(timer);}
+ if(version!==sessionVersion)throw changedSession();
+ if(res.ok&&responseType==='blob'){const blob=await res.blob();if(version!==sessionVersion)throw changedSession();return blob;}
+ const text=await res.text();if(version!==sessionVersion)throw changedSession();let data;try{data=text?JSON.parse(text):null}catch{throw Error('Resposta inesperada do servidor.');}if(!res.ok){const error=Error(data?.msg||data?.message||data?.error_description||'Falha no servidor.');error.code=data?.error_code||data?.code;error.status=res.status;throw error;}return data;
+ }catch(error){if(version!==sessionVersion)throw changedSession();throw error;}finally{clearTimeout(timer);pendingRequests.delete(controller);}
 }
 const post=(path,data,headers={})=>request(path,{method:'POST',headers,body:JSON.stringify(data)});
 const avatars=createAvatarStore({request,urlAPI:window.URL});
-const profileEditor=createProfileEditor({window,request,getSession:()=>session,keepSession,avatars,accountControls:areaControls,onState:profileStateChanged,onProfile:value=>{profile=value;management?.updateProfile(value);updateIdentity();}});
+const profileEditor=createProfileEditor({window,request,getSession:()=>session,keepSession,avatars,accountControls:areaControls,onState:profileStateChanged,onProfile:value=>{if(!session||value.user_id!==session.user.id)return;profile=value;management?.updateProfile(value);updateIdentity();}});
 function profileStateChanged(){const disabled=loading||busy||profileEditor.busy||!!activityEditor?.busy;$('#sync').disabled=disabled;$('#areaSelect').disabled=disabled;$('#account').disabled=disabled;$('#planSelect').disabled=disabled;document.querySelectorAll('nav button').forEach(b=>b.disabled=disabled);}
 activityEditor=createActivityEditor({window,dialog:$('#recordDialog'),onState:profileStateChanged,save:async(context,values)=>{
  if(admin||(!demo&&(!loaded||!session||session.user.id!==context.user_id)))throw Error('Entre e sincronize sua conta antes de salvar.');
@@ -44,15 +49,17 @@ const rec=id=>records.find(r=>r.plan_id===active&&r.session_id===id);
 const dateLabel=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
 async function load(preferred){if(activityBlocksNavigation())return;if(profileEditor.busy||profileEditor.dirty){notice('Salve ou descarte as alterações do perfil antes de sincronizar.');return;}profileEditor.detach();avatars.clear();loaded=false;loading=true;loadError='';management?.destroy();management=null;plans=[];records=[];comments=[];$('#areaSelect').disabled=true;$('#sync').disabled=true;$('#content').innerHTML='<p role="status">Carregando sua área…</p>';try{
  if(!session){render();return;}
+ const expected=sessionVersion;
  await post('/rest/v1/rpc/atlas_ensure_profile',{});
  const access=await post('/rest/v1/rpc/atlas_access_context',{});accessState=accountAreas(access,preferred);role=accessState.selected;admin=role!=='athlete';
  const ps=await request('/rest/v1/atlas_profiles?select=*&user_id=eq.'+encodeURIComponent(session.user.id));profile=ps.find(p=>p.user_id===session.user.id);
  if(!profile)throw Error('Seu perfil não está disponível. Tente sincronizar novamente.');
  if(admin){const initialPage=view==='profile'?'staffProfile':'overview';view='admin';management=createManagement({root:$('#content'),role,userId:session.user.id,request,notice,accountControls:areaControls,enableCoach,initialPage,renderProfile:mountProfile,profileState:()=>profileEditor,saveProfile:async name=>{await request('/rest/v1/atlas_profiles?user_id=eq.'+session.user.id,{method:'PATCH',body:JSON.stringify({name})});profile={...profile,name};}});await management.load();}
  else{if(view==='admin')view='today';const own='&user_id=eq.'+encodeURIComponent(session.user.id);const data=await Promise.all(['/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id','/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id','/rest/v1/atlas_session_comments?select=*&order=created_at,id'].map(path=>readRows(request,path+own)));[plans,records,comments]=data;plans.sort((a,b)=>(a.state==='archived')-(b.state==='archived'));plans=plans.map(p=>({...p,sessions:p.atlas_sessions.sort((a,b)=>a.date.localeCompare(b.date))}));if(!plans.some(p=>p.id===active))active=plans[0]?.id;}
+ if(expected!==sessionVersion)throw changedSession();
  loading=false;
  loaded=true;notice(admin?(role==='admin'?'Área do admin dono.':'Área do treinador.'):'Dados sincronizados.');render();
- }catch(e){loading=false;loaded=false;management?.destroy();management=null;plans=[];records=[];comments=[];if(expiredAccess(e)){keepSession(null);$('#appMain').hidden=true;window.location.replace(loginDestination('expired'));return;}loadError=e.message;notice('Não foi possível carregar os dados. '+e.message);render();}finally{$('#sync').disabled=false;}}
+ }catch(e){if(e.code==='local_session_changed')return;loading=false;loaded=false;management?.destroy();management=null;plans=[];records=[];comments=[];if(expiredAccess(e)){keepSession(null);$('#appMain').hidden=true;window.location.replace(loginDestination('expired'));return;}loadError=e.message;notice('Não foi possível carregar os dados. '+e.message);render();}finally{$('#sync').disabled=false;}}
 function areaControls(){return `<section class="account-areas"><h3>Áreas da conta</h3><p>Mesmo login e histórico pessoal. Área atual: <strong>${esc(areaLabels[role])}</strong>.</p><div class="actions">${accessState.areas.map(area=>`<button type="button" data-area="${area}" aria-pressed="${area===role}">${area===role?'✓ ':''}${esc(areaLabels[area])}</button>`).join('')}</div>${accessState.coachStatus==='none'?'<p>Você também pode acompanhar atletas como treinador. O dono precisa autorizar os vínculos.</p><button type="button" data-enable-coach>Ativar área de treinador</button>':accessState.coachStatus==='inactive'?'<p>Acesso de treinador desativado pelo dono. Sua área de atleta continua disponível.</p>':''}</section>`;}
 async function enableCoach(){await post('/rest/v1/rpc/atlas_enable_coach',{});await request('/rest/v1/atlas_profiles?user_id=eq.'+encodeURIComponent(session.user.id),{method:'PATCH',body:JSON.stringify({preferred_area:'coach'})});await load('coach');}
 async function switchArea(area){if(activityBlocksNavigation()){$('#areaSelect').value=role;return;}if(!session||loading||busy||profileEditor.busy||management?.busy||!accessState.areas.includes(area)){$('#areaSelect').value=role;return;}if(management?.dirty||profileEditor.dirty){notice('Salve ou descarte as alterações antes de trocar de área.');$('#areaSelect').value=role;return;}busy=true;$('#areaSelect').disabled=true;try{await request('/rest/v1/atlas_profiles?user_id=eq.'+encodeURIComponent(session.user.id),{method:'PATCH',body:JSON.stringify({preferred_area:area})});await load(area);}catch(e){notice('Não foi possível trocar de área. '+e.message);render();}finally{busy=false;$('#areaSelect').disabled=false;}}
@@ -93,8 +100,22 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
 document.addEventListener('change',e=>{if(e.target.id==='areaSelect'){switchArea(e.target.value);}if(e.target.id==='planSelect'){if(activityBlocksNavigation()){e.target.value=active;return;}if(profileEditor.busy||profileEditor.dirty){notice('Salve ou descarte as alterações do perfil antes de trocar de plano.');e.target.value=active;return;}active=e.target.value;render();}});
 function loginDestination(reason=''){return '/entrar?next='+encodeURIComponent(safeNext('/app'+window.location.search))+(reason?'&reason='+reason:'');}
 function expiredAccess(error){return error.status===401||error.status===403||['refresh_token_not_found','refresh_token_already_used','session_not_found','bad_jwt'].includes(error.code);}
-$('#account').onclick=async()=>{if(activityBlocksNavigation())return;if(busy||loading||profileEditor.busy||management?.busy)return;if(management?.dirty||profileEditor.dirty){notice('Salve ou descarte as alterações antes de sair.');return;}if(session){try{await request('/auth/v1/logout',{method:'POST'})}catch{}keepSession(null);profileEditor.detach();avatars.clear();management?.destroy();management=null;plans=[];records=[];comments=[];profile=null;$('#content').innerHTML='';$('#accountIdentity').hidden=true;$('#appMain').hidden=true;}window.location.assign('/entrar');};
-window.addEventListener('beforeunload',event=>{if(activityEditor?.busy||activityEditor?.dirty||profileEditor.busy||profileEditor.dirty||management?.dirty){event.preventDefault();event.returnValue='';}});
+$('#account').onclick=async()=>{if(activityBlocksNavigation())return;if(busy||loading||profileEditor.busy||management?.busy)return;if(management?.dirty||profileEditor.dirty){notice('Salve ou descarte as alterações antes de sair.');return;}if(session){const expected=sessionVersion;try{await request('/auth/v1/logout',{method:'POST'})}catch{}if(expected!==sessionVersion)return;endPrivateView('logout',true);return;}window.location.assign('/entrar');};
+function endPrivateView(reason='expired',removeStored=false){
+ sessionVersion++;for(const controller of pendingRequests)controller.abort();pendingRequests.clear();refresh=null;
+ if(removeStored)keepSession(null);else session=null;
+ activityEditor?.reset();profileEditor.discard();profileEditor.detach();avatars.clear();management?.destroy();management=null;
+ plans=[];records=[];comments=[];calendars.clear();profile=null;active=null;loaded=false;loading=false;loadError='';
+ $('#content').replaceChildren();$('#accountIdentity').hidden=true;$('#accountName').textContent='';$('#accountArea').textContent='';$('#accountInitials').textContent='';$('#accountAvatar').removeAttribute('src');$('#goal').textContent='';$('#notice').textContent='';$('#appMain').hidden=true;
+ window.location.replace(reason==='logout'?'/entrar':loginDestination(reason));
+}
+window.addEventListener('storage',event=>{
+ if(event.storageArea&&event.storageArea!==localStorage||event.key!==null&&event.key!=='atlas-session'||!session)return;
+ let next;try{next=JSON.parse(event.newValue||'null');}catch{}
+ if(next?.user?.id===session.user.id&&next.access_token&&Number.isFinite(next.expires_at)){session=next;return;}
+ endPrivateView(next?'changed':'expired');
+});
+window.addEventListener('beforeunload',event=>{if(session&&(activityEditor?.busy||activityEditor?.dirty||profileEditor.busy||profileEditor.dirty||management?.dirty)){event.preventDefault();event.returnValue='';}});
 async function initialize(){
  const hash=new URLSearchParams(window.location.hash.replace(/^#/,'')),query=new URLSearchParams(window.location.search);
  if(hash.has('access_token')||hash.has('error')||hash.has('error_description')||query.has('token_hash')){const destination=(hash.get('type')||query.get('type'))==='recovery'?'/redefinir-senha':'/confirmar-email',fragment=window.location.hash,search=window.location.search;window.history.replaceState(null,'','/app');window.location.replace(destination+search+fragment);return;}
@@ -104,6 +125,6 @@ async function initialize(){
   await post('/rest/v1/rpc/atlas_complete_onboarding',{initial_area:user.user_metadata?.account_type==='coach'?'coach':'athlete'});
   const requestedView=query.get('view');if(['today','calendar','progress','guide','profile'].includes(requestedView))view=requestedView;
   $('#appMain').hidden=false;await load();
- }catch(e){if(expiredAccess(e)){keepSession(null);window.location.replace(loginDestination('expired'));return;}$('#appMain').hidden=false;loadError=e.message;render();notice('Não foi possível abrir sua conta. '+e.message);}
+ }catch(e){if(e.code==='local_session_changed')return;if(expiredAccess(e)){keepSession(null);window.location.replace(loginDestination('expired'));return;}$('#appMain').hidden=false;loadError=e.message;render();notice('Não foi possível abrir sua conta. '+e.message);}
 }
 initialize();

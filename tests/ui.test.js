@@ -14,7 +14,7 @@ import {readRows, monitoringRows, summaryHTML, commentsHTML} from '../monitoring
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
 const html=readFileSync(new URL('../app.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
 const tick=()=>new Promise(r=>setTimeout(r,20));
-async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false,expired=false,calendarSessions=null,history=false}={}){
+async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false,expired=false,calendarSessions=null,history=false,interceptRequest=null}={}){
  const w=new Window({url:'http://localhost/app'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
  const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin};
  const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
@@ -22,9 +22,9 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  const plan={...doc,state:'published',version:1,id:'plan-1',published_by:'coach-private-id',source_draft_id:'draft-private-id',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
  if(loggedIn)w.localStorage.setItem('atlas-session',JSON.stringify({access_token:'test',expires_at:Date.now()/1000+3600,user:{id}}));
  const blobs=[];w.URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:http://localhost/test';};w.URL.revokeObjectURL=()=>{};
- const calls=[];
+ const calls=[];let intercept=interceptRequest;
  let coachStatus=coach?'active':'none';
- w.fetch=async(url,options)=>{calls.push({url,options});let data=[];
+ w.fetch=async(url,options)=>{calls.push({url,options});if(intercept){const response=await intercept(url,options);if(response)return response;}let data=[];
  if(url.includes('/auth/v1/signup'))data={user:{id}};
  else if(url.includes('/auth/v1/user')){if(expired)return new Response(JSON.stringify({error_code:'bad_jwt',message:'JWT expired'}),{status:401});data={id,user_metadata:{account_type:coach?'coach':'athlete'}};}
  else if(url.includes('/auth/v1/token'))data={access_token:'test',expires_in:3600,user:{id}};
@@ -41,7 +41,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  return new Response(JSON.stringify(data));};
  const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
- return {w,calls,blobs,get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
+ return {w,calls,blobs,set intercept(value){intercept=value;},get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
 test('athlete form keeps failed fields, saves and edits exact session, exports no auth data',async()=>{
  const h=await harness(),d=h.w.document;await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');assert.equal(d.querySelectorAll('[data-record]').length,2);
@@ -139,4 +139,45 @@ test('unsaved activity fields block navigation, area changes, sync and unload un
   await h.click('#keepActivity');assert.equal(d.querySelector('#recordDialog').open,true);await h.click('[data-close=recordDialog]');await h.click('#discardActivity');assert.equal(d.querySelector('#recordDialog').open,false);
   await h.area('coach');assert.equal(d.querySelector('#areaSelect').value,'coach');assert.equal(h.rows.length,0);
  }finally{await h.w.happyDOM.close();}
+});
+
+const storageChange=async(h,value)=>{const oldValue=h.w.localStorage.getItem('atlas-session'),newValue=value?JSON.stringify(value):null;if(newValue)h.w.localStorage.setItem('atlas-session',newValue);else h.w.localStorage.removeItem('atlas-session');h.w.dispatchEvent(new h.w.StorageEvent('storage',{key:'atlas-session',oldValue,newValue,storageArea:h.w.localStorage}));await tick();};
+test('logout in another tab clears private data and unsaved activity fields immediately',async()=>{
+ const h=await harness(),d=h.w.document;try{
+  await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record=sessao-001]');d.querySelector('#recordForm').elements.notes.value='Relato privado não salvo';
+  await storageChange(h,null);assert.equal(d.querySelector('#appMain').hidden,true);assert.equal(d.querySelector('#recordDialog').open,false);assert.equal(d.querySelector('#recordForm').elements.notes.value,'');assert.equal(d.querySelector('#recordForm').elements.session_id.value,'');assert.equal(d.querySelector('#recordContext').textContent,'');assert.equal(d.querySelector('#accountName').textContent,'');assert.equal(d.querySelector('#content').textContent,'');assert.match(h.w.location.href,/reason=expired/);
+ }finally{await h.w.happyDOM.close();}
+});
+test('a late activity response after an account switch cannot restore the previous user or remove the new session',async()=>{
+ const h=await harness(),d=h.w.document;let respond;try{
+  await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record=sessao-001]');const form=d.querySelector('#recordForm');form.elements.status.value='feito';form.elements.notes.value='Relato da conta anterior';
+  h.intercept=(url,options)=>url.includes('atlas_activity_records')&&options.method==='POST'?new Promise(resolve=>respond=()=>resolve(new Response(JSON.stringify([JSON.parse(options.body)])))):null;
+  await h.submit('#recordForm');assert.ok(respond);assert.equal(d.querySelector('#recordForm [type=submit]').disabled,true);
+  const other={access_token:'other-access',refresh_token:'other-refresh',expires_at:Date.now()/1000+3600,user:{id:'other'}};await storageChange(h,other);respond();await tick();
+  assert.equal(h.w.localStorage.getItem('atlas-session'),JSON.stringify(other));assert.equal(d.querySelector('#appMain').hidden,true);assert.equal(d.querySelector('#content').textContent,'');assert.equal(d.querySelector('#recordContext').textContent,'');assert.equal(d.querySelector('#recordForm').elements.notes.value,'');assert.match(h.w.location.href,/reason=changed/);assert.equal(h.rows.length,0);
+ }finally{respond?.();await h.w.happyDOM.close();}
+});
+test('refreshing the same account in another tab keeps a dirty form and uses its renewed access token',async()=>{
+ const h=await harness(),d=h.w.document;try{
+  await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record=sessao-001]');const form=d.querySelector('#recordForm');form.elements.status.value='adaptado';form.elements.notes.value='Continuar preenchendo';
+  const renewed={access_token:'renewed-access',refresh_token:'renewed-refresh',expires_at:Date.now()/1000+3600,user:{id:'athlete'}};await storageChange(h,renewed);assert.equal(d.querySelector('#recordDialog').open,true);assert.equal(form.elements.notes.value,'Continuar preenchendo');
+  await h.submit('#recordForm');assert.equal(h.rows[0].notes,'Continuar preenchendo');const write=h.calls.findLast(c=>c.url.includes('atlas_activity_records')&&c.options.method==='POST');assert.equal(write.options.headers.Authorization,'Bearer renewed-access');
+ }finally{await h.w.happyDOM.close();}
+});
+test('a refresh response arriving after cross-tab logout never resurrects the old session',async()=>{
+ const h=await harness(),d=h.w.document;let respond;try{
+  const expiring={access_token:'expiring',refresh_token:'refresh',expires_at:Date.now()/1000-1,user:{id:'athlete'}};await storageChange(h,expiring);
+  h.intercept=url=>url.includes('grant_type=refresh_token')?new Promise(resolve=>respond=()=>resolve(new Response(JSON.stringify({access_token:'late-access',refresh_token:'late-refresh',expires_in:3600,user:{id:'athlete'}})))):null;
+  d.querySelector('#sync').click();await tick();assert.ok(respond);await storageChange(h,null);respond();await tick();
+  assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.equal(d.querySelector('#appMain').hidden,true);assert.equal(d.querySelector('#content').textContent,'');assert.match(h.w.location.href,/reason=expired/);
+ }finally{respond?.();await h.w.happyDOM.close();}
+});
+
+test('an initial account response and a pending logout cannot clear a newer login from another tab',async()=>{
+ let releaseInitial;
+ const initial=await harness({interceptRequest:url=>url.endsWith('/auth/v1/user')?new Promise(resolve=>releaseInitial=()=>resolve(new Response(JSON.stringify({id:'athlete',user_metadata:{}})))):null});
+ const other={access_token:'other-access',refresh_token:'other-refresh',expires_at:Date.now()/1000+3600,user:{id:'other'}};
+ try{assert.ok(releaseInitial);await storageChange(initial,other);releaseInitial();await tick();assert.equal(initial.w.localStorage.getItem('atlas-session'),JSON.stringify(other));assert.equal(initial.w.document.querySelector('#appMain').hidden,true);}finally{releaseInitial?.();await initial.w.happyDOM.close();}
+ const h=await harness();let releaseLogout;
+ try{h.intercept=url=>url.includes('/auth/v1/logout')?new Promise(resolve=>releaseLogout=()=>resolve(new Response('null'))):null;h.w.document.querySelector('#account').click();await tick();assert.ok(releaseLogout);await storageChange(h,other);releaseLogout();await tick();assert.equal(h.w.localStorage.getItem('atlas-session'),JSON.stringify(other));assert.equal(h.w.document.querySelector('#appMain').hidden,true);}finally{releaseLogout?.();await h.w.happyDOM.close();}
 });

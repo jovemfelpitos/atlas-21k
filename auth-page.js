@@ -46,6 +46,7 @@ export async function createAuthPage({window:w,client=createAuthClient(w.ATLAS_C
   heading('Entre na sua conta','Bom te ver por aqui. Seu próximo treino está a um passo.');
   $('#authContent').innerHTML=formHTML(`${emailField()}${passwordField('Senha','password','current-password')}<p id="passwordHint" class="field-hint"></p><p class="forgot-link">${link('/recuperar-senha','Esqueci minha senha')}</p>`,'Entrar')+`<p class="auth-bottom">Novo por aqui? ${link('/criar-conta','Criar conta')}</p>`;
   if(new URLSearchParams(w.location.search).get('reason')==='expired')status('Sua sessão terminou. Entre novamente para continuar.');
+  if(new URLSearchParams(w.location.search).get('reason')==='changed')status('A conta mudou em outra aba. Entre novamente para abrir seus dados.');
  }
  d.addEventListener('click',event=>{
   const button=event.target.closest('[data-password]');if(!button)return;

@@ -55,7 +55,7 @@ Na gestão, abra **Atletas → Abrir atleta → Ver calendário** em um plano, o
 
 ## Meu perfil — todas as áreas
 
-Abra **Perfil** na área de atleta ou **Meu perfil** na gestão. Edite nome, data de nascimento opcional e dias disponíveis; depois use **Salvar perfil**. Uma data futura não é aceita. O nome e a foto são os mesmos ao trocar de área, mantendo o histórico. **Escolher foto** aceita JPG, PNG ou WebP de até 8 MB e ajusta a imagem para um quadrado. **Remover foto** volta às iniciais. Sua foto e nascimento ficam acessíveis somente a você, ao dono e à equipe autorizada pelos vínculos.
+Abra **Perfil** na área de atleta ou **Meu perfil** na gestão. Edite nome, data de nascimento opcional e dias disponíveis; depois use **Salvar perfil**. Uma data futura não é aceita. O nome e a foto são os mesmos ao trocar de área, mantendo o histórico. **Escolher foto** aceita JPG, PNG ou WebP de até 8 MB e ajusta a imagem para um quadrado. **Remover foto** volta às iniciais. Sua data de nascimento é consultada e editada somente por você. A leitura da foto acompanha o acesso autorizado ao seu perfil.
 
 Em **Acesso à conta**, **Alterar e-mail** exige sua senha atual e envia uma confirmação ao endereço atual e ao novo. Conclua os dois links; até lá, seu e-mail de login permanece o anterior. Use **Conferir confirmação do e-mail** para atualizar o estado. **Alterar senha** pede a senha atual, a nova e a repetição, com no mínimo oito caracteres. Se não lembrar a atual, use **Esqueci minha senha**. Preencha senhas diretamente no site, sem compartilhá-las. Salve ou descarte alterações antes de trocar de área, sincronizar ou sair. Dados pessoais e credenciais não concedem acesso de admin nem reativam um treinador desativado pelo dono.
 
@@ -70,3 +70,11 @@ Clique em **Ver relato e comentários** para consultar esforço, dor, recuperaç
 O atleta vê comentários em **Treino**, **Calendário** e **Evolução**, inclusive quando a sessão ainda não tem relato, e pode exportá-los junto com seus dados. Seus registros só podem ser editados por ele; o admin dono e treinadores ativos vinculados podem consultá-los. O resumo organiza as informações relatadas, sem avaliar clinicamente ou mudar a prescrição.
 
 UX-02 entregue em 14/10/2026: landing, acesso separado, escolha inicial de área e recuperação. SMTP Brevo próprio ativo, com modelos em português; e-mails reais de confirmação e recuperação entregues e links validados pelo dono, incluindo entrada de nova conta como treinador. O remetente do piloto usa domínio técnico `brevosend.com`. A área inicial de treinador abre sem atletas vinculados e não permite consultar planos/relatos de terceiros. A conta que já tem histórico mantém sua última área ao entrar novamente. A matriz completa entre contas e dispositivos permanece em UX-06.
+
+## Ajuda e sessão entre abas
+
+A página [Ajuda](/ajuda) reúne orientações de conta, recuperação, áreas, planos, calendário e registro. No piloto, procure o treinador ou o administrador responsável pelo acesso, informando tela, ação, horário aproximado e dispositivo. Não envie senhas, códigos ou links de acesso.
+
+Ao sair ou trocar de conta em outra aba do mesmo navegador, as telas privadas anteriores são encerradas, incluindo formulários não salvos. Salve antes de sair. A renovação de acesso da mesma pessoa mantém o formulário em andamento. O encerramento entre abas não equivale a apagar imediatamente a tela de outro dispositivo.
+
+Planos cujo nome começa com **PILOTO UX-06** contêm somente sessões fictícias de teste do app, sem prescrição de exercícios. Escolha o plano correto antes de registrar; planos e atividades reais continuam separados. UX-06 permanece em validação com o dono.

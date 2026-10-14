@@ -61,3 +61,8 @@ test('resend protects repeated clicks and keeps the email when rate-limited',asy
  const h=await harness('/verifique-seu-email'),d=h.w.document;
  try{d.querySelector('#email').value='person@example.com';h.fail={path:'/resend',code:'over_email_send_rate_limit',status:429};await h.submit();assert.match(d.querySelector('#authError').textContent,/Aguarde/);h.fail=null;await h.submit();await h.submit();assert.equal(h.calls.filter(c=>c.url.includes('/resend')).length,2);assert.match(d.querySelector('#authStatus').textContent,/Aguarde um minuto/);}finally{await h.close();}
 });
+
+test('login explains an account change without exposing the previous private view',async()=>{
+ const h=await harness('/entrar?reason=changed');
+ try{assert.match(h.w.document.querySelector('#authStatus').textContent,/conta mudou em outra aba/);assert.equal(h.w.document.querySelector('#appMain'),null);assert.equal(h.calls.length,0);}finally{await h.close();}
+});

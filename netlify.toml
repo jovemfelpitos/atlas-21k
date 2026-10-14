@@ -3,6 +3,11 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/ajuda"
+  to = "/ajuda.html"
+  status = 200
+
+[[redirects]]
   from = "/app"
   to = "/app.html"
   status = 200

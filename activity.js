@@ -74,7 +74,7 @@ const formHTML=()=>`<form id="recordForm" novalidate>
 export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}) {
  dialog.innerHTML=formHTML();
  const form=dialog.querySelector('form'),get=id=>dialog.querySelector('#'+id);
- let context=null,baseline='',busy=false;
+ let context=null,baseline='',busy=false,version=0;
  const setText=(id,value)=>{if(get(id).textContent!==value)get(id).textContent=value;};
  const dirty=()=>!!context&&JSON.stringify(valuesOf(form))!==baseline;
  const resetErrors=()=>{get('saveError').textContent='';form.querySelectorAll('[aria-invalid]').forEach(el=>el.removeAttribute('aria-invalid'));};
@@ -87,7 +87,8 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
   onState();
  }
  function close(){if(busy)return false;if(dirty()){get('activityDiscard').hidden=false;get('keepActivity').focus();return false;}finish();return true;}
- function finish(){context=null;baseline='';dialog.close();get('activityDiscard').hidden=true;form.reset();onState();}
+ function finish(){version++;context=null;baseline='';dialog.close();get('activityDiscard').hidden=true;form.reset();onState();}
+ function reset(){finish();busy=false;form.elements.session_id.value='';form.elements.recovery.innerHTML=recoveryOptions.map(value=>`<option value="${esc(value)}">${esc(value||'Ainda não avaliei')}</option>`).join('');get('recordContext').replaceChildren();get('recordTitle').textContent='Registrar atividade';resetErrors();get('activitySaveState').textContent='';get('effortValue').textContent='';get('painValue').textContent='';get('activityStatusHelp').textContent='';form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);form.removeAttribute('aria-busy');form.querySelector('[type=submit]').textContent='Salvar atividade';onState();}
  dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
  dialog.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button||busy)return;
@@ -101,9 +102,10 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
   resetErrors();get('activityDiscard').hidden=true;
   let values;try{values=validateActivity(valuesOf(form));}catch(error){get('saveError').textContent=error.message;const field=form.elements[error.field];field?.setAttribute('aria-invalid','true');field?.focus();return;}
   busy=true;form.setAttribute('aria-busy','true');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=true);const submit=form.querySelector('[type=submit]');submit.textContent='Salvando…';get('activitySaveState').textContent='Confirmando o salvamento do seu relato…';onState();
-  let saved;
-  try{saved=await save(context,values);if(!saved)throw Error('Tente salvar novamente para conferir o registro.');}catch(error){const detail=error.status===401||error.status===403?'Sua sessão ou acesso mudou. Entre novamente ou sincronize sua conta antes de tentar de novo.':error.status===409?'Já existe um registro para esta sessão. Tente salvar novamente para conferir ou sincronize os dados.':error.status>=500||error.name==='TypeError'||error.name==='AbortError'?'Verifique sua conexão e tente novamente.':error.message;get('saveError').textContent='Não foi possível confirmar o salvamento. Seus campos foram mantidos. '+detail;get('saveError').focus();}
-  finally{busy=false;form.removeAttribute('aria-busy');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);submit.textContent='Salvar atividade';get('activitySaveState').textContent='';onState();}
+  let saved;const expected=version;
+  try{saved=await save(context,values);if(!saved)throw Error('Tente salvar novamente para conferir o registro.');}catch(error){if(expected!==version)return;const detail=error.status===401||error.status===403?'Sua sessão ou acesso mudou. Entre novamente ou sincronize sua conta antes de tentar de novo.':error.status===409?'Já existe um registro para esta sessão. Tente salvar novamente para conferir ou sincronize os dados.':error.status>=500||error.name==='TypeError'||error.name==='AbortError'?'Verifique sua conexão e tente novamente.':error.message;get('saveError').textContent='Não foi possível confirmar o salvamento. Seus campos foram mantidos. '+detail;get('saveError').focus();}
+  finally{if(expected===version){busy=false;form.removeAttribute('aria-busy');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);submit.textContent='Salvar atividade';get('activitySaveState').textContent='';onState();}}
+  if(expected!==version)return;
   if(saved){const sessionId=context.session_id;finish();onSaved(saved);window.document.querySelector(`[data-record="${window.CSS.escape(sessionId)}"]`)?.focus({preventScroll:true});}
  });
  return {
@@ -117,6 +119,6 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
    get('recordTitle').textContent=record?'Editar atividade':'Registrar atividade';
    get('recordContext').innerHTML=`<strong>${esc(session.type)}</strong><p>${esc(displayDate(session.date))} · ${esc(plan.name)}${plan.version!=null?' · v'+esc(plan.version):''}${plan.state==='archived'?' · histórico':''}</p><p>Previsto: ${esc(amount(session.km,'km'))} · ${esc(amount(session.minutes,'min'))}</p><details><summary>Ver treino previsto</summary><p class="preserve-lines">${esc(session.description)}</p>${session.intensity?'<p>'+esc(session.intensity)+'</p>':''}${session.gym?'<p>Musculação: '+esc(session.gym)+'</p>':''}${session.notes?'<p>Observações: '+esc(session.notes)+'</p>':''}</details>`;
    resetErrors();get('activityDiscard').hidden=true;baseline=JSON.stringify(valuesOf(form));update();if(!dialog.open)dialog.showModal();form.elements.status.focus();
-  },close,get dirty(){return dirty();},get busy(){return busy;},get isOpen(){return !!context;}
+  },close,reset,get dirty(){return dirty();},get busy(){return busy;},get isOpen(){return !!context;}
  };
 }

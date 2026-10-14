@@ -14,7 +14,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
  let people = [], coaches = [], links = [], plans = [], drafts = [], events = [], records = [], comments = [];
  let monitor = {athlete:'',plan:'',from:'',to:'',state:'all',history:false}, inspected = null, commentDraft = {id:null,text:''};
  let page = initialPage, selectedAthlete = '', search = '', filter = 'all', detail = null, editor = null;
- let dirty = false, busy = false, preview = 'list', pending = null;
+ let dirty = false, busy = false, disposed = false, preview = 'list', pending = null;
  let users = [], usersTotal = 0, usersSearch = '', usersFilter = 'all', usersOffset = 0;
  let activityBack='monitoring';
  const calendars=new Map();
@@ -27,14 +27,16 @@ export function createManagement({root, role, enabled = true, userId, request, n
  const name = id => people.find(p => p.user_id === id)?.name || 'Atleta';
  const athletes = () => people.filter(p => owner || (p.user_id !== userId && links.some(l => l.coach_id === userId && l.athlete_id === p.user_id && l.active)));
  const options = selected => `<option value="">Selecione um atleta</option>` + athletes().map(p => `<option value="${esc(p.user_id)}" ${p.user_id === selected ? 'selected' : ''}>${esc(p.name)} · ${esc(p.user_id.slice(-6))}</option>`).join('');
- const message = (text, error = false) => {const el = root.querySelector('#managementError'); if (el) {el.textContent = text; el.classList.toggle('error', error); el.setAttribute('role', error ? 'alert' : 'status');} notice(text);};
+ const message = (text, error = false) => {if(disposed)return;const el = root.querySelector('#managementError'); if (el) {el.textContent = text; el.classList.toggle('error', error); el.setAttribute('role', error ? 'alert' : 'status');} notice(text);};
 
  async function load() {
+  if(disposed)return;
   const result = await Promise.all([
    '/rest/v1/atlas_profiles?select=*&order=name,user_id', '/rest/v1/atlas_coaches?select=*&order=user_id', '/rest/v1/atlas_coach_athletes?select=*&order=coach_id,athlete_id',
    '/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id', '/rest/v1/atlas_plan_drafts?select=*&order=updated_at.desc,id', '/rest/v1/atlas_plan_events?select=*&order=created_at.desc,id',
    '/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id', '/rest/v1/atlas_session_comments?select=*&order=created_at,id'
   ].map(path => readRows(request,path)));
+  if(disposed)return;
   [people, coaches, links, plans, drafts, events, records, comments] = result;
   // RLS permits a coach to read their own athlete data too. This workspace shows
   // only managed athletes; personal plans belong in the separate athlete area.
@@ -49,7 +51,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   }
   if (owner) await loadUsers();
  }
- async function loadUsers() {const data=await rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});users=data.users;usersTotal=data.total;}
+ async function loadUsers() {if(disposed)return;const data=await rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});if(disposed)return;users=data.users;usersTotal=data.total;}
 
  function previewPlan(document) {
   const sessions = document.sessions;
@@ -141,6 +143,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   return `<h2>Meu perfil</h2><form id="staffProfile"><label>Nome<input name="name" maxlength="120" required value="${esc(p?.name)}"></label><button class="primary">Salvar nome</button></form><p>Área atual: ${owner ? 'admin dono' : 'treinador'}. Troque para Atleta para consultar e registrar seus treinos pessoais na mesma conta.</p>${accountControls()}`;
  }
  function render() {
+  if(disposed)return;
   root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key===(activityBack==='calendar'?'plans':'monitoring') || page==='calendar'&&key==='plans') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, calendar:calendarPage, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
@@ -155,6 +158,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
  }
  function markDirty() {dirty = true; const button = root.querySelector('#reviewPublish'); if (button) button.disabled = true; const state = root.querySelector('#draftState'); if (state) state.textContent = 'Alterações ainda não salvas.';}
  function dialog(title, content, label, action) {
+  if(disposed)return;
   root.querySelector('#managementDialog')?.remove();
   root.insertAdjacentHTML('beforeend', `<dialog id="managementDialog"><div class="dialog-head"><h2>${esc(title)}</h2><button data-dismiss aria-label="Fechar">✕</button></div>${content}<p id="actionError" role="alert" class="error"></p><div class="actions"><button id="confirmAction" class="primary">${esc(label)}</button><button data-dismiss>Cancelar</button></div></dialog>`);
   pending = action; root.querySelector('#managementDialog').showModal();
@@ -165,7 +169,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (dirty) dialog('Descartar alterações não salvas?', '<p>O conteúdo já salvo continuará disponível. As alterações desta tela serão descartadas.</p>', 'Descartar e continuar', async () => {dirty = false; commentDraft={id:null,text:''}; action();});
   else action();
  }
- function start(athlete, document = blankPlan(), base = null) {editor = {id: null, revision: null, athlete_id: athlete, base_plan_id: base, document: copy(document)}; dirty = true; page = 'editor'; render();}
+ function start(athlete, document = blankPlan(), base = null) {if(disposed)return;editor = {id: null, revision: null, athlete_id: athlete, base_plan_id: base, document: copy(document)}; dirty = true; page = 'editor'; render();}
  function selectAthlete(action) {
   dialog('Selecionar atleta', `<label>Destinatário<select id="destination">${options('')}</select></label>`, 'Continuar', async () => {const id = root.querySelector('#destination').value; if (!id) throw Error('Selecione um atleta.'); action(id);});
  }
@@ -179,10 +183,10 @@ export function createManagement({root, role, enabled = true, userId, request, n
   drafts = drafts.filter(d => d.id !== row.id).concat(copy(row)); render(); message('Rascunho salvo. Revise antes de publicar.');
  }
  async function command(action) {
-  if (busy) return;
+  if (busy||disposed) return;
   busy = true; const buttons = [...root.querySelectorAll('button,input,textarea,select')]; const prior = buttons.map(b => b.disabled); buttons.forEach(b => b.disabled = true);
-  try {await action();} catch (error) {const el = root.querySelector('#managementDialog[open] #actionError') || root.querySelector('#editorError') || root.querySelector('#importError') || root.querySelector('#commentError') || root.querySelector('#filterError'); if (el) el.textContent = error.message; else message(error.message, true);}
-  finally {busy = false; buttons.forEach((b, i) => {if (b.isConnected) b.disabled = prior[i];}); root.querySelectorAll('.management-nav button').forEach(b => b.disabled = false);}
+  try {await action();} catch (error) {if(disposed)return;const el = root.querySelector('#managementDialog[open] #actionError') || root.querySelector('#editorError') || root.querySelector('#importError') || root.querySelector('#commentError') || root.querySelector('#filterError'); if (el) el.textContent = error.message; else message(error.message, true);}
+  finally {busy = false; if(!disposed){buttons.forEach((b, i) => {if (b.isConnected) b.disabled = prior[i];}); root.querySelectorAll('.management-nav button').forEach(b => b.disabled = false);}}
  }
  listen('input', e => {
   if (e.target.closest('#planEditor')) markDirty();
@@ -244,5 +248,5 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if (b.dataset.preview) {capture(); preview = b.dataset.preview; render(); return;}
   if (b.id === 'addSession' || b.id === 'addGuide' || b.dataset.removeSession !== undefined || b.dataset.removeGuide !== undefined) {capture(); if (b.id === 'addSession') editor.document.sessions.push(newSession(editor.document.sessions)); if (b.id === 'addGuide') editor.document.guide.push({tema: '', orientacao: ''}); if (b.dataset.removeSession !== undefined) editor.document.sessions.splice(Number(b.dataset.removeSession), 1); if (b.dataset.removeGuide !== undefined) editor.document.guide.splice(Number(b.dataset.removeGuide), 1); dirty = true; render();}
  });
- return {load, render, updateProfile(value){people=people.map(person=>person.user_id===value.user_id?value:person);}, destroy() {listeners.forEach(([type, handler]) => root.removeEventListener(type, handler));}, get busy() {return busy||!!profileState().busy;}, get dirty() {return dirty||!!profileState().dirty;}};
+ return {load, render, updateProfile(value){if(!disposed)people=people.map(person=>person.user_id===value.user_id?value:person);}, destroy() {disposed=true;listeners.forEach(([type, handler]) => root.removeEventListener(type, handler));people=[];coaches=[];links=[];plans=[];drafts=[];events=[];records=[];comments=[];users=[];editor=null;pending=null;dirty=false;commentDraft={id:null,text:''};calendars.clear();}, get busy() {return !disposed&&(busy||!!profileState().busy);}, get dirty() {return !disposed&&(dirty||!!profileState().dirty);}};
 }

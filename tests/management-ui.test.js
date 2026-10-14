@@ -119,3 +119,14 @@ test('historical monitoring is explicit and does not reuse a record from a diffe
   d.querySelector('#monitorFilters').elements.plan.value='old';await h.submit('#monitorFilters');assert.equal(d.querySelectorAll('[data-inspect]').length,2);await h.click('[data-inspect="0"]');assert.match(d.querySelector('#content').textContent,/ainda não registrou/);
  }finally{await h.close();}
 });
+
+test('a file import finishing after the private workspace closes cannot render the old prescription',async()=>{
+ const h=await harness(),d=h.w.document;let release;
+ try{
+  await h.click('[data-page=plans]');await h.click('#importPlan');d.querySelector('#athlete').value='a';
+  const input=d.querySelector('#importFile');Object.defineProperty(input,'files',{configurable:true,value:[{size:model.length,text:()=>new Promise(resolve=>release=()=>resolve(model))}]});
+  input.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();assert.ok(release);
+  h.portal.destroy();d.querySelector('#content').replaceChildren();release();await tick();
+  assert.equal(d.querySelector('#content').textContent,'');assert.equal(d.querySelector('#planEditor'),null);assert.equal(h.calls.some(c=>c.path.includes('atlas_save_draft')),false);
+ }finally{release?.();await h.close();}
+});

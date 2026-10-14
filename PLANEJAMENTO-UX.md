@@ -1,6 +1,6 @@
 # Atlas Run — revisão de experiência e próximos ciclos
 
-Status: UX-01 implementada; UX-02 a UX-05 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas, perfil completo, calendário mensal com agenda e registro de atividade revisado. UX-06 permanece planejada.
+Status: UX-01 implementada; UX-02 a UX-05 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas, perfil completo, calendário mensal com agenda e registro de atividade revisado. UX-06 está em validação; correções técnicas e planos de teste preparados, com aceite real pendente. Evidências e decisões provisórias em [PILOTO-UX06.md](PILOTO-UX06.md).
 
 Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing, acesso/recuperação e perfil completo já foram implementados. SMTP Brevo próprio e modelos estão ativos; confirmação e recuperação foram entregues e validadas pelo dono, que entrou com nova conta de treinador. Calendário mensal, agenda e registro de atividade revisado estão implementados; o piloto segue em UX-06.
 
@@ -275,7 +275,7 @@ Histórias: atleta entende cada escala e salva o que realmente informou; pode re
 
 **Dependências:** UX-01 e contrato dos estados de UX-04.
 
-### UX-06 — Piloto, qualidade e decisão de lançamento · P0
+### UX-06 — Piloto, qualidade e decisão de lançamento · P0 · em validação
 
 **Entrega:** validar o pacote completo com contas reais e registrar a decisão sobre as antigas sprints 5/6/7.
 
@@ -306,3 +306,5 @@ Questões para decidir em UX-06, com experiência de uso: quem será o primeiro 
 Foram projetados fluxos, telas, regras, dependências e critérios de aceite. UX-01 atualiza contas, permissões, provisionamento de perfil, lista do dono e troca de área. UX-02 separa apresentação, acesso e app, implementa cadastro completo e recuperação; SMTP/modelos ativos e links de confirmação/recuperação validados, incluindo nova conta de treinador e leitura remota de suas permissões. UX-03 entrega perfil comum, fotos privadas, nascimento e alteração protegida de credenciais; 50 testes locais e verificações remotas de permissões/conservação dos dados. Registro de e-mails em EMAILS-PILOTO.md. A implementação atual está descrita em `GESTAO.md` e em `SPRINTS.md`. UX-04 entrega calendário mensal e agenda para atleta/equipe autorizada, com estados por relato, múltiplas sessões, versões separadas, 56 testes e conferência local mobile. Nenhuma escrita no banco remoto nesta sprint. UX-05 entrega registro com explicações das escalas, campos opcionais, distinção entre vazio/zero, proteção de alterações, confirmação de persistência e reenvio após resposta perdida; 66 testes e conferência local mobile, sem alterar dados reais ou prescrição. A matriz completa entre contas/dispositivos e trocas reais de credenciais permanece em UX-06.
 
 Aceite de UX-01: 30 testes locais passaram. O banco remoto confirmou quatro perfis/listagem do dono e preservou um plano, 39 sessões e uma atividade. A promoção da conta com plano foi validada sob os papéis reais em transação revertida: áreas atleta/treinador disponíveis, plano e atividade pessoais preservados, sem privilégio de admin ou prescrição automática para si. Não foi concedido um papel novo de forma persistente durante o teste. O advisor de segurança não apontou problema novo; permanece o aviso anterior de proteção contra senhas vazadas, dependente do plano contratado.
+
+Execução UX-06 em 14/10/2026: sessão entre abas corrigida, ajuda pública, 74 testes locais e sete verificações de RLS/publicação no banco remoto com rollback. Dois planos fictícios autorizados publicados sem substituir o original (39 sessões/dois registros no início do piloto). Matriz real pendente e recomendação provisória de adiar 5/7 e reduzir 6 à operação atual em [PILOTO-UX06.md](PILOTO-UX06.md).
