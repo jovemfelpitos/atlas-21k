@@ -47,7 +47,7 @@ E-mails e identificadores das contas não são registrados neste documento. Não
 
 ## Retorno real em 15/10/2026
 
-No primeiro retorno, o dono informou: “Tudo funcionou nos passos A, B e dono; não testei os extras”. Isso confirmou o uso básico, isolamento visual entre as contas, troca de área e consulta do dono. Depois, confirmou alteração de senha com sucesso no computador e no celular e pediu o encerramento da sprint. Não relatou testes de alteração de e-mail, sincronização da mesma conta em dois dispositivos, conflito concorrente, falha de conexão ou fluxo de treinador vinculado.
+No primeiro retorno, o dono informou: “Tudo funcionou nos passos A, B e dono; não testei os extras”. Isso confirmou o uso básico, isolamento visual entre as contas, troca de área e consulta do dono. Depois, confirmou alteração de senha com sucesso no computador e no celular e pediu o encerramento da sprint. Em retorno posterior, relatou resultados adicionais descritos abaixo. A validação de treinador vinculado continua inconclusiva.
 
 Consulta somente leitura confirmou os dois planos publicados com três sessões e um relato cada. Atleta A: `ux06-registro-1`, Adaptado, campos numéricos vazios. Atleta B: `ux06-futuro` (sessão de 15/10, agora no dia corrente), Feito, campos numéricos vazios. A segunda sessão de 14/10 segue sem relato nos dois planos. Portanto, registrar dor zero e Não feito continuam sem evidência de uso real nesta rodada, embora cobertos pelas verificações técnicas anteriores.
 
@@ -61,14 +61,23 @@ O plano original continua publicado com 39 sessões; a contagem atual é de trê
 | Atleta B no computador | Área Atleta mostra plano B e não o A; caso específico de Não feito previsto no roteiro. | Uso básico/isolamento aprovados pelo dono em 15/10. Banco: sessão de 15/10 como Feito, números vazios. Não feito não foi comprovado nesta rodada; complemento no backlog. |
 | B troca Atleta → Treinador → Atleta | Mesmo login/perfil; gestão vazia sem vínculos; relato pessoal preservado ao voltar. | Aprovado pelo dono em 15/10; banco sem vínculos ativos na consulta anterior. Demora nos dois sentidos relatada e aceita para melhoria posterior. |
 | Dono abre os dois planos/relatos | Destinatários certos; consulta sem edição da execução alheia. | Aprovado pelo dono em 15/10; dois relatos persistidos, um em cada plano. |
-| Mesma conta em celular e computador | Após sincronizar, o relato aparece no outro dispositivo; edição concorrente não substitui silenciosamente a versão mais recente. | Não realizado em uso real; transferido ao backlog por aceite do dono. |
-| Sessão e conexão em uso real | Saída em outra aba pede novo acesso; conexão interrompida informa falha, mantém formulário na página e permite tentar novamente. | Não realizado em uso real; transferido ao backlog por aceite do dono. |
-| Calendário, histórico e perfil | Duas sessões distintas no mesmo dia; navegar a mês vazio/Hoje; abrir original/histórico sem misturar registros; salvar dados pessoais/foto na conta de teste e conferir no outro dispositivo. | Não realizado em uso real; transferido ao backlog por aceite do dono. |
+| Mesma conta em celular e computador | Após sincronizar, o relato aparece no outro dispositivo. | Aprovado pelo dono no retorno adicional de 15/10. |
+| Edição concorrente | Aviso ao tentar salvar uma versão antiga aberta no celular após gravar no PC. | Dono relatou aviso “não foi possível confirmar…” no celular. A causa exata não foi inferida apenas pelo início da mensagem; regressão técnica de conflito permanece aprovada. |
+| Conexão em uso real | Conexão interrompida informa falha, mantém formulário e permite salvar após reconectar. | Aprovado pelo dono no retorno adicional de 15/10. Saída entre abas não foi confirmada separadamente nesse retorno. |
+| Calendário, histórico e perfil | Cenários do passo 5 do roteiro real. | Dono informou que funcionaram; depois identificou bloqueio indevido no Perfil, corrigido nesta rodada conforme seção abaixo. |
 | Troca real de senha | Alterar senha diretamente no site e confirmar funcionamento no computador e celular. | Aprovado pelo dono em 15/10; informou sucesso nos dois dispositivos. Sem acesso do agente às senhas. |
-| Troca real de e-mail | Outro endereço controlado, confirmação dos dois e-mails e manutenção da identidade/histórico. | Não relatado; transferido ao backlog. Não inferir aprovação a partir da troca de senha. |
-| Treinador vinculado com login real | Publicar/revisar/comentar somente para atleta autorizado, conferir retorno como atleta e revogar acesso sem perda de histórico. | Não realizado com login real; backlog. Escolher vínculo sem expor histórico real sem autorização. |
+| Troca real de e-mail | Outro endereço controlado, confirmações e manutenção da conta/histórico. | Dono informou sucesso no passo 6 no retorno adicional de 15/10. A confirmação é do usuário; não foram lidas credenciais nem presumido um novo endereço pelo agente. |
+| Treinador vinculado com login real | Publicar/revisar/comentar somente para atleta autorizado, conferir retorno como atleta e revogar acesso sem perda de histórico. | Inconclusivo: dono relatou confusão e “acho que deu bom”. Não marcado como aprovado. Escolher vínculo sem expor histórico real sem autorização. |
 
 Registrar dispositivo/navegador, tarefa, resultado e erro observado; não anexar credenciais ou relatos pessoais. Retorno básico conferido em 15/10, seguido do aceite de encerramento. Em novas rodadas, consultar somente os campos necessários dos planos identificados e atualizar as evidências. Quando os testes terminarem, os planos podem ser arquivados pelo fluxo do app, preservando o histórico de teste; não apagar dados reais ou testados silenciosamente.
+
+## Retorno adicional e correção do Perfil — 15/10/2026
+
+O dono confirmou sincronização (1), aviso no celular durante edição concorrente (2), manutenção de esforço zero ao mudar para Não feito (3), formulário preservado sem internet e salvo após reconectar (4), cenários de calendário/perfil (5) e troca de e-mail (6). O relato do passo 3 confirma preservação de esforço zero na mudança de situação; não comprova especificamente dor zero ou um novo registro Não feito com todos os números vazios. O passo 7 foi descrito com dúvida e permanece inconclusivo.
+
+O dono também relatou um bloqueio urgente: o Perfil pedia salvar/descartar mesmo sem alteração, impedindo sair e trocar de área. A versão anterior foi reproduzida localmente com preenchimento automático de credenciais em formulários fechados. Corrigido com consulta sem formulários ocultos e um editor explícito por ação; comparação dos dados pessoais usa os valores exibidos ao abrir. Preencher somente a senha atual ou repetir o e-mail atual não bloqueia navegação. Alterações reais mantêm proteção, com Salvar/Cancelar próprios e confirmação ao voltar.
+
+Validação da correção: 79 testes locais aprovados, incluindo gravação/falha de perfil e credenciais, cancelamento, preenchimento automático, restauração dos valores e troca/sincronização/saída nas áreas atleta, treinador e dono. Navegador local em 320/390/768 px e desktop, com dados fictícios, confirmou editor intacto livre para trocar de área, proteção de mudança real, cancelamento e salvamento com retorno à consulta. Nenhuma migração, alteração de permissão ou escrita em conta real nesta correção. O aceite anterior da sprint permanece registrado; esta é uma correção posterior ao aceite, sujeita à confirmação do dono em seu navegador.
 
 ## Encerramento e melhorias posteriores
 
@@ -79,7 +88,7 @@ Registrar dispositivo/navegador, tarefa, resultado e erro observado; não anexar
 Backlog após o encerramento:
 
 - Medir a troca de área no celular/computador, separar tempo de rede, consultas e renderização e otimizar as etapas necessárias. Preservar a atualização de permissões e melhorar a indicação de carregamento se a medição apontar necessidade. Não foi feita alteração de desempenho nesta rodada.
-- Complementar os testes reais de sincronização/conflito, falha de sessão/rede, perfil/calendário/histórico e alteração de e-mail. Cobrir também os casos específicos de dor zero e Não feito.
+- Confirmar a correção do Perfil no navegador do dono. Complementar saída entre abas, detalhe do aviso de conflito e os casos específicos de dor zero e Não feito com todos os números vazios; os demais retornos reais estão registrados na matriz.
 - Validar publicação/revisão/comentário e revogação com treinador vinculado em contas autorizadas; a cobertura técnica anterior permanece registrada, sem substituir esse teste manual.
 
 Os planos fictícios foram preservados; encerramento da sprint não autoriza apagar registros, conceder vínculos ou alterar contas. Nenhum teste pendente é apresentado como executado.

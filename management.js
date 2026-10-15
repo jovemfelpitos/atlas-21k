@@ -165,7 +165,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
  }
  function navigate(action) {
   if(profileState().busy)return;
-  if(profileState().dirty){message('Salve ou descarte as alterações do perfil antes de sair.');return;}
+  if(profileState().dirty){message('Salve ou cancele a edição do perfil antes de sair.');return;}
   if (dirty) dialog('Descartar alterações não salvas?', '<p>O conteúdo já salvo continuará disponível. As alterações desta tela serão descartadas.</p>', 'Descartar e continuar', async () => {dirty = false; commentDraft={id:null,text:''}; action();});
   else action();
  }
@@ -220,7 +220,7 @@ export function createManagement({root, role, enabled = true, userId, request, n
   if(page==='calendar'&&handleCalendarAction(e,calendarState(),render))return;
   if(b.dataset.calendarPlan){navigate(()=>{if(!plans.some(p=>p.id===b.dataset.calendarPlan))return;detail=b.dataset.calendarPlan;page='calendar';render();});return;}
   if(b.dataset.calendarInspect){const row=monitoringRows(plans,records,{plan:detail}).find(r=>r.key===b.dataset.calendarInspect);if(row){inspected=row.key;activityBack='calendar';commentDraft={id:null,text:''};page='activity';render();}return;}
-  if (b.hasAttribute('data-enable-coach')) {if(profileState().busy||profileState().dirty){message('Salve ou descarte as alterações do perfil antes de ativar outra área.');return;}await command(async()=>{await enableCoach?.();});return;}
+  if (b.hasAttribute('data-enable-coach')) {if(profileState().busy||profileState().dirty){message('Salve ou cancele a edição do perfil antes de ativar outra área.');return;}await command(async()=>{await enableCoach?.();});return;}
   if (b.dataset.usersFilter) {await command(async()=>{usersFilter=b.dataset.usersFilter;usersOffset=0;await loadUsers();render();});return;}
   if (b.dataset.usersOffset!==undefined) {await command(async()=>{usersOffset=Number(b.dataset.usersOffset);await loadUsers();render();});return;}
   if (b.dataset.repairProfile) {await command(async()=>{await rpc('atlas_ensure_profile',{account:b.dataset.repairProfile});await refresh();message('Perfil regularizado. A conta e o histórico foram preservados.');});return;}
