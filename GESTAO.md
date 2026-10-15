@@ -77,4 +77,4 @@ A página [Ajuda](/ajuda) reúne orientações de conta, recuperação, áreas, 
 
 Ao sair ou trocar de conta em outra aba do mesmo navegador, as telas privadas anteriores são encerradas, incluindo formulários não salvos. Salve antes de sair. A renovação de acesso da mesma pessoa mantém o formulário em andamento. O encerramento entre abas não equivale a apagar imediatamente a tela de outro dispositivo.
 
-Planos cujo nome começa com **PILOTO UX-06** contêm somente sessões fictícias de teste do app, sem prescrição de exercícios. Escolha o plano correto antes de registrar; planos e atividades reais continuam separados. UX-06 permanece em validação com o dono.
+Planos cujo nome começa com **PILOTO UX-06** contêm somente sessões fictícias de teste do app, sem prescrição de exercícios. Escolha o plano correto antes de registrar; planos e atividades reais continuam separados. UX-06 foi concluída para o piloto por aceite do dono em 15/10/2026. A demora na troca de área ficou registrada como melhoria posterior.

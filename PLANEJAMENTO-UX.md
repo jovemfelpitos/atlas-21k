@@ -1,8 +1,8 @@
 # Atlas Run — revisão de experiência e próximos ciclos
 
-Status: UX-01 implementada; UX-02 a UX-05 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas, perfil completo, calendário mensal com agenda e registro de atividade revisado. UX-06 está em validação; correções técnicas e planos de teste preparados, com uso básico A/B/dono aprovado em 15/10 e validações adicionais pendentes. Evidências e decisões provisórias em [PILOTO-UX06.md](PILOTO-UX06.md).
+Status: UX-01 implementada; UX-02 a UX-05 entregues em 14/10/2026. SMTP ativo, confirmação/recuperação validadas, perfil completo, calendário mensal com agenda e registro de atividade revisado. UX-06 concluída para o piloto por aceite do dono em 15/10, incluindo uso básico A/B/dono e troca de senha no computador/celular. Demora na troca de área e testes complementares não realizados estão no backlog. Evidências e priorização em [PILOTO-UX06.md](PILOTO-UX06.md).
 
-Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing, acesso/recuperação e perfil completo já foram implementados. SMTP Brevo próprio e modelos estão ativos; confirmação e recuperação foram entregues e validadas pelo dono, que entrou com nova conta de treinador. Calendário mensal, agenda e registro de atividade revisado estão implementados; o piloto segue em UX-06.
+Este documento organiza as mudanças pedidas após a sprint 4. As sprints UX-01 a UX-06 têm numeração própria para preservar o roteiro original 5, 6 e 7. Conta única, landing, acesso/recuperação e perfil completo já foram implementados. SMTP Brevo próprio e modelos estão ativos; confirmação e recuperação foram entregues e validadas pelo dono, que entrou com nova conta de treinador. Calendário mensal, agenda e registro de atividade revisado estão implementados; UX-06 foi encerrada para o piloto conforme o aceite registrado em 15/10.
 
 ## 1. Objetivo e direção do produto
 
@@ -275,13 +275,13 @@ Histórias: atleta entende cada escala e salva o que realmente informou; pode re
 
 **Dependências:** UX-01 e contrato dos estados de UX-04.
 
-### UX-06 — Piloto, qualidade e decisão de lançamento · P0 · em validação
+### UX-06 — Piloto, qualidade e decisão de lançamento · concluída para o piloto em 15/10/2026
 
 **Entrega:** validar o pacote completo com contas reais e registrar a decisão sobre as antigas sprints 5/6/7.
 
 Cenários: dois atletas independentes, treinador que também é atleta, outro treinador sem vínculo e dono; acesso em dois dispositivos; cadastro externo, confirmação, recuperação e alteração de e-mail; perda de sessão; falhas de rede; perfil incompleto; plano sem sessão no mês; histórico e várias sessões no mesmo dia. Usar dados de teste identificados, sem inventar registros no histórico real.
 
-**Aceite:** nenhum bloqueio aberto de login/recuperação, perda de histórico, leitura de dados sem autorização ou publicação para destinatário errado; validar as tarefas principais no celular; documentar limites conhecidos e forma de suporte; conferir preservação dos dados existentes. Testes locais não substituem essa verificação entre contas/dispositivos reais.
+**Aceite inicialmente planejado:** nenhum bloqueio aberto de login/recuperação, perda de histórico, leitura de dados sem autorização ou publicação para destinatário errado; validar as tarefas principais no celular; documentar limites conhecidos e forma de suporte; conferir preservação dos dados existentes. Testes locais não substituem essa verificação entre contas/dispositivos reais. **Ajuste de encerramento em 15/10:** o dono aprovou os fluxos básicos e troca de senha no computador/celular e solicitou concluir a sprint, aceitando a demora na troca de área e transferindo os testes manuais complementares ao backlog. Esses cenários não foram marcados como testados.
 
 O piloto termina com um registro contendo evidências, problemas restantes e uma decisão para cada sprint antiga: executar, reduzir ou adiar. Não inicia cobrança nem cria múltiplas organizações automaticamente.
 
@@ -309,4 +309,4 @@ Aceite de UX-01: 30 testes locais passaram. O banco remoto confirmou quatro perf
 
 Execução UX-06 em 14/10/2026: sessão entre abas corrigida, ajuda pública, 74 testes locais e sete verificações de RLS/publicação no banco remoto com rollback. Dois planos fictícios autorizados publicados sem substituir o original (39 sessões/dois registros no início do piloto). Matriz real pendente e recomendação provisória de adiar 5/7 e reduzir 6 à operação atual em [PILOTO-UX06.md](PILOTO-UX06.md).
 
-Retorno em 15/10/2026: dono confirmou os passos básicos A/B/dono no celular/computador e informou não ter testado os extras. Leitura remota confirmou um relato por plano fictício (A Adaptado; B Feito; números vazios), sem ampliar vínculos ou alterar dados. Casos específicos de dor zero/Não feito e matriz adicional permanecem abertos. UX-06 continua em validação, conforme PILOTO-UX06.md.
+Retorno em 15/10/2026: dono confirmou os passos básicos A/B/dono no celular/computador e informou não ter testado os extras. Leitura remota confirmou um relato por plano fictício (A Adaptado; B Feito; números vazios), sem ampliar vínculos ou alterar dados. Em retorno posterior, confirmou troca de senha no computador/celular e solicitou encerrar a sprint. UX-06 concluída para o piloto por esse aceite, com demora ao trocar de área e testes complementares não realizados no backlog de PILOTO-UX06.md.
