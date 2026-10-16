@@ -27,7 +27,7 @@ export function createCalendarState(rows, today=todayDate()) {
 }
 export const filterCalendarRows = (rows, filter) => rows.filter(r=>filter==='all'||group(r)===filter);
 
-export function calendarHTML({rows,state,renderSession,today=todayDate()}) {
+export function calendarHTML({rows,state,renderSession,today=todayDate(),showHeading=true}) {
  const filtered=filterCalendarRows(rows,state.filter), monthRows=filtered.filter(r=>r.session.date.startsWith(state.month));
  const byDay=new Map();
  for(const row of filtered){const day=row.session.date;if(!byDay.has(day))byDay.set(day,[]);byDay.get(day).push(row);}
@@ -36,7 +36,7 @@ export function calendarHTML({rows,state,renderSession,today=todayDate()}) {
  const title=utc(state.month+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'});
  const nearest=rows.find(r=>r.session.date>=today)||rows.at(-1);
  return `<section class="training-calendar" aria-label="Calendário de treinos">
-  <h2>Calendário de treinos</h2>
+  ${showHeading?'<h2>Calendário de treinos</h2>':''}
   <div class="calendar-modes" role="group" aria-label="Visualização do calendário">${[['month','Mês'],['agenda','Agenda']].map(([value,label])=>`<button type="button" data-cal-mode="${value}" aria-pressed="${state.mode===value}">${label}</button>`).join('')}</div>
   <div class="calendar-filters" role="group" aria-label="Filtrar sessões por execução">${filters.map(([value,label])=>`<button type="button" data-cal-filter="${value}" aria-pressed="${state.filter===value}">${label} <span>${filterCalendarRows(rows,value).length}</span></button>`).join('')}</div>
   <p class="calendar-help">Realizadas = feito + adaptado. Sem registro inclui datas passadas, hoje e futuras; não significa que o treino não foi feito. Filtros e contagens consideram apenas esta versão do plano.</p>

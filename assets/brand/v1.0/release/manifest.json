@@ -1,0 +1,82 @@
+{
+  "version": "1.0",
+  "approved_by": "proprietario",
+  "approved_on": "2026-10-15",
+  "font": "Sora",
+  "font_sha256": "811e11966d29f3a01fcb19b087b61ac067d380665a55aebb7fcdf2cda95e4a93",
+  "geometry": "original-symbol-paths-and-transforms-preserved",
+  "files": [
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-colorido.svg",
+      "source": "svg/logotipo/atlas-run-horizontal-colorido.svg",
+      "sha256": "a97b019922b5a1f0577ebadd7857386f5afc48c6e302864cacc64dee7cc19672"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-branco.svg",
+      "source": "svg/logotipo/atlas-run-horizontal-branco.svg",
+      "sha256": "2a600c2a05594be0e903acfba913302233ff8d4136f0edac59e1b7d3a6813dcc"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-preto.svg",
+      "source": "svg/logotipo/atlas-run-horizontal-preto.svg",
+      "sha256": "9a45a37f7ae12f7d8daf04e2d6f25b18fcd99c08cfa87f3fd4852793ebc1015b"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-colorido.svg",
+      "source": "svg/logotipo/atlas-run-vertical-colorido.svg",
+      "sha256": "5b2f61b60034982140a59d0932fd9410987835713842d4bb13bd0ad807410321"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-branco.svg",
+      "source": "svg/logotipo/atlas-run-vertical-branco.svg",
+      "sha256": "27ebe63c9490817abfe6ba970d837db957a85524cd252a66575025e0203e8527"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-preto.svg",
+      "source": "svg/logotipo/atlas-run-vertical-preto.svg",
+      "sha256": "3af236e537c0635acaeab76b52389f69cfcf706ba84037d4eba553ad331d5345"
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-colorido-1200.png",
+      "source": "svg/logotipo/atlas-run-horizontal-colorido.svg",
+      "sha256": "697551959b580abd6c97bddb335e07d2e2c85291ec74991dcf6cdd1323c1bd4e",
+      "width": 1200,
+      "height": 287
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-branco-1200.png",
+      "source": "svg/logotipo/atlas-run-horizontal-branco.svg",
+      "sha256": "7ac6a6e50c4e0df96ddc7441a32890304b86195c5a7cd93fe9cae21937bd8289",
+      "width": 1200,
+      "height": 287
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-preto-1200.png",
+      "source": "svg/logotipo/atlas-run-horizontal-preto.svg",
+      "sha256": "18cab55e90ae41f87ecae28b71092235ccc1e24a8887b6420fc73107cce20dbc",
+      "width": 1200,
+      "height": 287
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-colorido-1200.png",
+      "source": "svg/logotipo/atlas-run-vertical-colorido.svg",
+      "sha256": "b43ccfb42e70ef7667308a6b11aaa1951ce65325a3ede5a66e3993cfe9e0f021",
+      "width": 1200,
+      "height": 690
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-branco-1200.png",
+      "source": "svg/logotipo/atlas-run-vertical-branco.svg",
+      "sha256": "7194b9bc1bc3eae0831bdd9ed85ab41af935936b1d1efe7e8f477ac452726fa3",
+      "width": 1200,
+      "height": 690
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-preto-1200.png",
+      "source": "svg/logotipo/atlas-run-vertical-preto.svg",
+      "sha256": "d244e0e8605f250711fb67017bd7aaeafc29e292e0a614df0edb771793227988",
+      "width": 1200,
+      "height": 690
+    }
+  ]
+}

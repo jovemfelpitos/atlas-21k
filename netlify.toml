@@ -59,3 +59,14 @@
   for = "/config.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/notifications-sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

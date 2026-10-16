@@ -1,0 +1,65 @@
+/* Composition of the private app; shared forms, calendar and management keep their own styles. */
+.app-page>header{padding-top:12px;padding-bottom:12px;flex-wrap:nowrap}
+.app-page>header .brand-logo{width:164px}
+.app-page>header>div{flex-shrink:0}
+.app-page #appMain{padding-top:16px}
+.app-page:has(#recordDialog[open]){overflow:hidden}
+.app-page .app-account-context{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px);align-items:center;gap:16px;margin-bottom:16px}
+.app-page .app-account-context:has(.area-switcher[hidden]){grid-template-columns:minmax(0,1fr)}
+.app-page .account-identity{gap:10px;margin:0;min-width:0}
+.app-page .account-identity>div:last-child{min-width:0;overflow-wrap:anywhere}
+.app-page .account-identity strong{font-size:14px}
+.app-page .account-identity small{font-size:12px}
+.app-page .account-avatar{width:38px;height:38px;font-size:13px}
+.app-page .area-switcher{padding:0;border:0;margin:0;font-size:12px}
+.app-page .area-switcher select{margin-top:4px;min-height:44px;padding:9px 10px;font-size:14px}
+.app-page .app-plan-context{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px 20px;padding-top:12px;border-top:1px solid var(--line)}
+.app-page .app-plan-picker{min-width:0;margin:0;font-size:12px}
+.app-page #planSelect{margin:4px 0 0;min-height:44px;padding:9px 10px;font-size:14px}
+.app-page #goal{font-size:13px;margin:0 0 11px;color:var(--muted)}
+.app-page .notice{background:transparent;border-radius:0;padding:0;font-size:12px;line-height:1.6;margin:10px 0;overflow-wrap:anywhere}
+.app-page .notice:empty{display:none}
+.app-page nav[aria-label="Seções"]{grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 20px;padding:0;overflow:visible;gap:4px}
+.app-page nav[aria-label="Seções"] button{min-height:46px;border:1px solid transparent;border-bottom-color:var(--line);border-radius:10px;padding:10px 4px;font-size:13px}
+.app-page nav[aria-label="Seções"] button.active{background:var(--color-surface-subtle);border-color:var(--line);border-bottom:3px solid var(--lime);font-weight:600}
+.app-page nav[aria-label="Seções"] button:focus-visible{outline-offset:2px}
+.app-page .app-view-heading{margin:0 0 16px}
+.app-page .app-view-heading h1{font-size:28px;line-height:1.2;letter-spacing:-.6px;margin:0}
+.app-page #workoutContext{font-size:13px;margin:6px 0 0}
+.app-page .training-session{padding:24px}
+.app-page .training-session .tag{margin-bottom:8px;font-size:12px;color:var(--muted)}
+.app-page .training-session h2{font-size:24px;line-height:1.3;margin:0 0 16px}
+.app-page .workout-prescription{display:flex;flex-wrap:wrap;gap:12px 32px;margin:0 0 20px;padding:16px 0;border-block:1px solid var(--line)}
+.app-page .workout-prescription dt{font-size:12px;color:var(--muted)}
+.app-page .workout-prescription dd{font-size:32px;font-weight:700;line-height:1.3;margin:4px 0 0;font-variant-numeric:tabular-nums}
+.app-page .workout-prescription dd small{font-size:16px;font-weight:400;color:var(--muted)}
+.app-page .workout-description{margin:0 0 14px}
+.app-page .workout-intensity{font-size:13px;color:var(--muted);margin:12px 0 0}
+.app-page .workout-intensity strong{color:var(--text);font-weight:500}
+.app-page .workout-instructions{margin:18px 0}
+.app-page .workout-instructions h3,.app-page .workout-record h3{font-size:13px;font-weight:600;margin:0 0 6px}
+.app-page .workout-instructions p{font-size:14px;margin:0;color:var(--muted)}
+.app-page .training-session .preserve-lines{white-space:pre-wrap}
+.app-page .workout-record{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--color-surface-subtle);margin:20px 0 4px}
+.app-page .workout-record .status{font-size:14px;margin:0}
+.app-page .workout-record .muted{font-size:13px;margin:6px 0 0}
+.app-page .training-session>.primary{min-height:48px;margin-top:16px}
+.app-page .app-data-access{padding:0;background:transparent;margin-top:24px}
+.app-page .app-data-access summary{font-size:13px;padding:12px 0}
+.app-page .app-data-access p{font-size:13px}
+.app-page #notice button{font-size:12px;border:1px solid var(--line);padding:8px 12px;margin-top:8px;min-height:44px}
+@media(max-width:600px){
+ .app-page .app-plan-context{grid-template-columns:minmax(0,1fr)}
+ .app-page #goal{margin:0;font-size:12px}
+}
+@media(max-width:420px){
+ .app-page>header .brand-logo{width:144px}
+ .app-page .app-account-context{gap:12px;grid-template-columns:minmax(0,1fr) 130px}
+ .app-page .account-avatar{display:none}
+ .app-page nav[aria-label="Seções"]{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:12px}
+ .app-page nav[aria-label="Seções"] button{grid-column:span 2}
+ .app-page nav[aria-label="Seções"] button:nth-last-child(-n+2){grid-column:span 3}
+ .app-page .training-session{padding:18px}
+ .app-page .workout-prescription{gap:12px 24px}
+ .app-page .workout-prescription dd{font-size:30px}
+}

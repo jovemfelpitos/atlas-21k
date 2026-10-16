@@ -1,0 +1,24 @@
+{
+  "family": "Sora",
+  "retrieved": "2026-10-15",
+  "files": [
+    {
+      "file": "sora-latin-wght.woff2",
+      "source": "https://fonts.gstatic.com/s/sora/v17/xMQ9uFFYT72X5wkB_18qmnndmSdSnh2BAfO5mnuyOo1lfiQwV6-x.woff2",
+      "bytes": 25284,
+      "sha256": "811e11966d29f3a01fcb19b087b61ac067d380665a55aebb7fcdf2cda95e4a93"
+    },
+    {
+      "file": "sora-latin-ext-wght.woff2",
+      "source": "https://fonts.gstatic.com/s/sora/v17/xMQ9uFFYT72X5wkB_18qmnndmSdSnh2BAfO5mnuyOo1lfiQwWa-xsaQ.woff2",
+      "bytes": 12156,
+      "sha256": "08e1ba85bcb55277782f56766af09467dfe18cbeea49704203100c5797ac4cc5"
+    },
+    {
+      "file": "OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/sora/OFL.txt",
+      "bytes": 4385,
+      "sha256": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299"
+    }
+  ]
+}
