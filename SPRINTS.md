@@ -2,7 +2,7 @@
 
 ## Ciclo aprovado em 16/10/2026
 
-Execução uma sprint por vez: UX-07 publicação/alertas em andamento, seguida de UX-08 fluidez mobile, UX-09 evolução, UX-10 treinador no celular e UX-11 corrida + musculação. A identidade e o registrador mobile previamente aprovados entram na publicação da UX-07. Migração de alertas aplicada com dados preservados; aceite em aparelhos físicos continua explícito. Escopo, dependências e critérios em [docs/UX07-PUBLICACAO.md](docs/UX07-PUBLICACAO.md).
+Execução uma sprint por vez: UX-07 publicação/alertas publicada e verificada tecnicamente, seguida de UX-08 fluidez mobile, UX-09 evolução, UX-10 treinador no celular e UX-11 corrida + musculação. A identidade e o registrador mobile previamente aprovados estão publicados. Migração de alertas aplicada com dados preservados; 124 testes aprovados; configuração/dispatcher verificados em produção sem envio. Aceite em aparelhos Android/iPhone físicos permanece pendente. Escopo, evidências, dependências e critérios em [docs/UX07-PUBLICACAO.md](docs/UX07-PUBLICACAO.md).
 
 ## Próximo ciclo: revisão de experiência
 
