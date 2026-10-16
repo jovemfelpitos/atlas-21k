@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Conferência local da marca · Atlas Run</title>
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/typography.css">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/brand.css">
+  <style>
+    main{max-width:1120px;padding:24px}h1{font-size:clamp(28px,5vw,48px)}
+    h2{margin-top:32px}.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+    .review-grid>.card{min-width:0;margin:0}.review-grid .card h3{font-size:16px}
+    .brand-stage{display:grid;place-items:center;min-height:150px;padding:24px;background:var(--bg);border:1px solid var(--line);border-radius:14px;margin:16px 0;overflow:hidden}
+    .brand-stage.light{background:var(--text)}.brand-stage svg,.brand-stage>img{width:100%;height:auto;max-height:270px}
+    .symbol-stage>img{width:180px;max-width:100%}.icon-grid{display:flex;gap:20px;flex-wrap:wrap}
+    .icon-grid figure{margin:0;flex:1 1 150px}.icon-grid img{width:128px;height:128px;max-width:100%;display:block}
+    figcaption{font-size:13px;color:var(--muted);margin-top:10px}.font-sample{font-size:20px;overflow-wrap:anywhere}
+    .review-note{border-left:3px solid var(--lime);padding:12px 16px;background:var(--card)}
+    .sample-actions{display:flex;flex-wrap:wrap;gap:10px}.sample-actions button{width:auto;margin:0}
+    .sample-actions .primary{flex:1}.review-link{display:inline-flex;align-items:center;min-height:44px}
+    .preliminary{color:var(--color-warning);font-size:13px}#fontStatus{min-height:24px}
+    @media(max-width:760px){.review-grid{grid-template-columns:1fr}main{padding:20px}.brand-stage{padding:16px}}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">CONFERÊNCIA LOCAL · FORA DO BUILD PÚBLICO</p>
+    <h1>Atlas Run<br>Marca e tipografia.</h1>
+    <p class="review-note">Símbolo e ícones recebidos preservados. Tipografia dos logotipos aprovada pelo proprietário em 15/10/2026. As versões finais em curvas preservam o monograma e independem de fonte instalada.</p>
+    <p id="fontStatus" role="status">Carregando Sora local para a conferência…</p>
+    <a class="review-link" href="/">Ver landing local</a>
+
+    <h2>Símbolo oficial</h2>
+    <div class="review-grid">
+      <article class="card"><h3>Colorido · fundo escuro</h3><div class="brand-stage symbol-stage"><img src="/assets/brand/v1.0/svg/simbolo/atlas-run-simbolo-colorido.svg" width="305" height="181" alt="Símbolo Atlas Run colorido"></div><p class="muted">Arquivo recebido, sem alteração de caminhos, cores ou transformações.</p></article>
+      <article class="card"><h3>Preto · fundo claro</h3><div class="brand-stage light symbol-stage"><img src="/assets/brand/v1.0/svg/simbolo/atlas-run-simbolo-preto.svg" width="305" height="181" alt="Símbolo Atlas Run preto"></div><p class="muted">Proporção natural de 305 × 181; o símbolo não é um ícone quadrado.</p></article>
+    </div>
+
+    <h2>Ícones oficiais do aplicativo</h2>
+    <div class="card icon-grid">
+      <figure><img src="/assets/brand/v1.0/icons/atlas-run-icon-escuro.svg" width="512" height="512" alt="Ícone escuro do Atlas Run"><figcaption>Escuro · aplicação principal</figcaption></figure>
+      <figure><img src="/assets/brand/v1.0/icons/atlas-run-icon-lima.svg" width="512" height="512" alt="Ícone lima do Atlas Run"><figcaption>Lima · variante recebida</figcaption></figure>
+      <figure><img src="/assets/brand/v1.0/icons/atlas-run-icon-claro.svg" width="512" height="512" alt="Ícone claro do Atlas Run"><figcaption>Claro · variante recebida</figcaption></figure>
+    </div>
+
+    <h2>Sora na interface</h2>
+    <div class="review-grid">
+      <article class="card"><h3>Pesos da interface</h3><p class="font-sample" style="font-weight:400">400 · Seu plano. Seu ritmo.</p><p class="font-sample" style="font-weight:500">500 · Corrida e musculação.</p><p class="font-sample" style="font-weight:600">600 · Calendário e evolução.</p><p class="font-sample" style="font-weight:700">700 · Movimento com propósito.</p></article>
+      <article class="card"><h3>Aplicação homologada na interface</h3><a href="/" class="brand" aria-label="Atlas Run, início"><img class="brand-logo" src="/assets/brand/v1.0/release/svg/logotipo/atlas-run-horizontal-colorido.svg" width="610" height="146" alt="Atlas Run"></a><p class="muted">Logotipo horizontal com texto em curvas, derivado da composição aprovada com Sora. O símbolo e as proporções recebidas permanecem preservados.</p><label for="exampleField">Campo de exemplo<input id="exampleField" value="João · São Paulo"></label><div class="sample-actions"><button type="button" class="primary">Ação principal</button><button type="button" disabled>Indisponível</button></div></article>
+    </div>
+
+    <h2 id="logotipos">Logotipos homologados com Sora</h2>
+    <p>Compare a referência editável com Sora carregada e a versão final em curvas. Peso, espaçamento e posições foram mantidos a partir da composição aprovada. Os originais recebidos permanecem intactos.</p>
+    <div id="lockupGrid" class="review-grid"></div>
+    <p id="lockupError" class="error" role="alert"></p>
+    <p class="review-note">Aceite tipográfico registrado. Seis SVGs em curvas e seis PNGs de 1200 px preparados; arquivos editáveis e recebidos preservados como referência.</p>
+    <footer>Atlas Run · Seu plano. Seu ritmo. · Prévia sem acesso a contas ou dados reais.</footer>
+  </main>
+  <script type="module" src="/tools/brand-preview.js"></script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+{
+  "version": "1.0",
+  "source_zip": "Atlas_Run_Brand_Assets_V1.0.zip",
+  "source_sha256": "cd73d945dfad64794fc52e3ec19025cc78623595e3705f0e0639c2fd93145d68",
+  "files": [
+    {
+      "file": "ATLAS_RUN_PREVIEW_V1.0.png",
+      "bytes": 105240,
+      "sha256": "21e585117ab3ac550489e8dd567bdbacff27ae880c715c423b28841788fafc21",
+      "status": "referencia"
+    },
+    {
+      "file": "README.md",
+      "bytes": 1776,
+      "sha256": "72829e4ddc51038d2908a3425f1bb35372e322111fc58dd64935c69c0ea56019",
+      "status": "referencia"
+    },
+    {
+      "file": "docs/ENTREGA_CODEX.md",
+      "bytes": 436,
+      "sha256": "b12166d7ec5034872e21f136aa9cd7e424491a071c40f4d09411846993d34815",
+      "status": "referencia"
+    },
+    {
+      "file": "icons/atlas-run-16x16.png",
+      "bytes": 543,
+      "sha256": "6667c239ceeff0af49b499d4ca175c1679991f0cd17c23a9703cd58145c50bfd",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-escuro-512.png",
+      "bytes": 19834,
+      "sha256": "de175367a2a4a4112adc278b27b9c88f494c2e9c25bb261beb7ecc3e3f803411",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-512x512.png",
+      "bytes": 19834,
+      "sha256": "de175367a2a4a4112adc278b27b9c88f494c2e9c25bb261beb7ecc3e3f803411",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-escuro-192.png",
+      "bytes": 7174,
+      "sha256": "b0aa24a006418f4d241897e3c27a7bbf933f50c7d377b16032ada05b7e79e1e9",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-claro.svg",
+      "bytes": 820,
+      "sha256": "eba22ab6599e7c1ff821741c6ad3256105e9f87f2b264bd87003d1c1c8f59a23",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-lima.svg",
+      "bytes": 820,
+      "sha256": "c51edbc3997a776e82723678fe27eb3dc2148ec77b7ca5e9f3dacc83f767310a",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-claro-192.png",
+      "bytes": 6945,
+      "sha256": "ae264f08c766f873e1c63c8830efd06abfd035beb37891a281f79f61fccb2cfb",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-lima-192.png",
+      "bytes": 6770,
+      "sha256": "effd59ee1813f176ef9f7b1842484c2f9c2bda63db3ebd8c884e782e96cf5580",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-escuro.svg",
+      "bytes": 820,
+      "sha256": "7a6fba4aeb8df7b829a4349d21951847aff881e0d815ae901d33c52ec803187f",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-32x32.png",
+      "bytes": 1146,
+      "sha256": "8529008ed20abf72e420a494304db33bb446a70bdfdef22e4c04c5b45c796138",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-lima-512.png",
+      "bytes": 18640,
+      "sha256": "7c5f169dbf5242de66974f2f21ed9933cf5f764d575e7fa201dcbf9bd554afdd",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/favicon.ico",
+      "bytes": 542,
+      "sha256": "0251bb9500795108f9f225905c339d1391a11bd5793730ad84a2d8edcf793f35",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-icon-claro-512.png",
+      "bytes": 19187,
+      "sha256": "e6aa7dde110ecd54084b1e5f4d153bb1c44427125b3ae8a1d18f9f665a472821",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-180x180.png",
+      "bytes": 6638,
+      "sha256": "34fa7a66df183152dcd688e31ae58caed9a7a21bafbcbc585543d8dbd993788b",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-192x192.png",
+      "bytes": 7174,
+      "sha256": "b0aa24a006418f4d241897e3c27a7bbf933f50c7d377b16032ada05b7e79e1e9",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "icons/atlas-run-48x48.png",
+      "bytes": 1757,
+      "sha256": "38d827d8e5aba66735adea96752bd8150cba5a19b8b40359516f0c133231cd3b",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-colorido.svg",
+      "bytes": 1039,
+      "sha256": "6f8c1d9e92c0824678c838230d71302370f4a8db86eef95778a8c7da2487411f",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-branco.svg",
+      "bytes": 1161,
+      "sha256": "16589719369d2d3442444b05ffde51f4b924508982a1f9574db08f1c1ab6b8f1",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-preto.svg",
+      "bytes": 1161,
+      "sha256": "bb3b47d454101ebfd07f79de0b1283778105bb554a23a8cca0d3c2223d89405b",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-vertical-colorido.svg",
+      "bytes": 1161,
+      "sha256": "7d69b4ae086fd09bad16b919ec43c00c9ad83c50bf2a43d661a2193bba4248b7",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-preto.svg",
+      "bytes": 1039,
+      "sha256": "17a28858d202c61a5231d2546cfa0fdd9b3031c109964adfa5e079808f400d5c",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/logotipo/atlas-run-horizontal-branco.svg",
+      "bytes": 1039,
+      "sha256": "56f88143a87e1d8abc0a15fe753f93a80eee20bd09882adfe4e72eed2addcbb4",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "svg/simbolo/atlas-run-simbolo-preto.svg",
+      "bytes": 713,
+      "sha256": "f41ba9fc1f438fbca10d95cebf44d477853f270a2ad315a1efbca6bb842c2a60",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "svg/simbolo/atlas-run-simbolo-branco.svg",
+      "bytes": 713,
+      "sha256": "928f9880e081a1e4d2efd8c89c820989c04f3b59036f4121cda621809639ad6b",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "svg/simbolo/atlas-run-simbolo-colorido.svg",
+      "bytes": 713,
+      "sha256": "3f585e0d4841da233bfed66ef0a08b10a95654d00976566aef41a973f8b4a577",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-branco-1200.png",
+      "bytes": 16020,
+      "sha256": "b2bd23bbabd38f42876ba6576248d3e55b6c5eb3350ef7fb1ea003065bfca947",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-colorido-1200.png",
+      "bytes": 20535,
+      "sha256": "b66b7d0fe1d79c07aac46db4c8a5628937e4bade05886443855e3a8a7f9b1384",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/logotipo/atlas-run-horizontal-preto-1200.png",
+      "bytes": 20786,
+      "sha256": "29323f3706ec301634d9c5f0d45dada27673616b949d97ab3dee33119966062d",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-colorido-1200.png",
+      "bytes": 36810,
+      "sha256": "525cc0ac4dc8d62c44bf5f8db0b76601a9ea7c59c3538e55ee8e4cde507e0be2",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-branco-1200.png",
+      "bytes": 29544,
+      "sha256": "9bb8b7e5105f1406f2c2e0d2af9f5a007fd731c4545ade12a98db86085289344",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/logotipo/atlas-run-vertical-preto-1200.png",
+      "bytes": 37582,
+      "sha256": "efa9ef4a91a046ed5ac093dde6685fd283f5f7b213ba1b9d742ee75e13aebfbb",
+      "status": "preliminar-tipografia"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-branco-256.png",
+      "bytes": 4940,
+      "sha256": "9b1af2df923c29a71aecf83b3623c3e0ee8b5f12b98023a2c9ef0b1c396e6e4a",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-colorido-512.png",
+      "bytes": 14417,
+      "sha256": "6bf2a15d1626aea17d995fbf5d9f131b8948c870cf7431c74f979b49fb44bfc4",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-colorido-256.png",
+      "bytes": 7196,
+      "sha256": "c882a4279a153d3e467893052fbe85677cbe3aee3e462cb28e4b5e4d9915b62b",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-colorido-1024.png",
+      "bytes": 30710,
+      "sha256": "30328e42eebbf5c26a4ebfd9cc0843df7fb849eee9a552b3a9a5c404c0808bad",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-preto-1024.png",
+      "bytes": 31930,
+      "sha256": "de8783b2293be991270d9ef2e2c4524c2324ead8802e07b1e5bfab48ac038bcb",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-branco-512.png",
+      "bytes": 11442,
+      "sha256": "39dcddc0cbf66d66d291cf02cbd4d5c580d43b1fdd9ed15a19c561839955331a",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-branco-1024.png",
+      "bytes": 24970,
+      "sha256": "1cac44076045d335f4dba6ba1e403e519ac15f6719b2c91262709a2ff1666a18",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-preto-512.png",
+      "bytes": 15096,
+      "sha256": "ab9d82432d36d6b6ef3cb958b27add3d791f0fd7222c9d5e5bafc4ccbf066253",
+      "status": "recebido-aprovado"
+    },
+    {
+      "file": "png/simbolo/atlas-run-simbolo-preto-256.png",
+      "bytes": 7522,
+      "sha256": "0e28e82695193e64c7e360da3a25079a685423a3fa087eef633a5deecd123339",
+      "status": "recebido-aprovado"
+    }
+  ]
+}

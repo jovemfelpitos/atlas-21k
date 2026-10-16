@@ -7,6 +7,7 @@ import {parsePlan} from '../importer.js';
 import {createManagement} from '../management.js';
 import {createCalendarState,calendarHTML,handleCalendarAction} from '../calendar.js';
 import {createActivityEditor,persistActivity} from '../activity.js';
+import {createNotificationSettings,notificationTarget} from '../notifications.js';
 import {safeNext} from '../auth-client.js';
 import {createAvatarStore,createProfileEditor,initials} from '../profile.js';
 import {accountAreas,areaLabels} from '../account-areas.js';
@@ -14,12 +15,13 @@ import {readRows, monitoringRows, summaryHTML, commentsHTML} from '../monitoring
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
 const html=readFileSync(new URL('../app.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
 const tick=()=>new Promise(r=>setTimeout(r,20));
-async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false,expired=false,calendarSessions=null,history=false,interceptRequest=null}={}){
- const w=new Window({url:'http://localhost/app'});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
- const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin};
+async function harness({admin=false,coach=false,linked=false,loggedIn=true,withComments=false,expired=false,calendarSessions=null,activityRecords=[],history=false,interceptRequest=null,now=null,serviceWorker=false,url='http://localhost/app',preferredArea=null,notificationFactory=createNotificationSettings}={}){
+ const w=new Window({url});w.document.write(html);w.ATLAS_CONFIG={supabaseUrl:'https://example.supabase.co',supabaseKey:'sb_publishable_test'};
+ if(serviceWorker)Object.defineProperty(w.navigator,'serviceWorker',{value:new w.EventTarget(),configurable:true});
+ const id=admin?'admin':'athlete',profile={user_id:id,name:admin?'Admin':'Atleta',available_days:[2,4],is_admin:admin,preferred_area:preferredArea};
  const doc=parsePlan(readFileSync(new URL('../modelo-plano.csv',import.meta.url),'utf8'));
  if(calendarSessions)doc.sessions=structuredClone(calendarSessions);
- const plan={...doc,state:'published',version:1,id:'plan-1',published_by:'coach-private-id',source_draft_id:'draft-private-id',user_id:id,atlas_sessions:doc.sessions};let rows=[],fail=false,imported=0;
+ const plan={...doc,state:'published',version:1,id:'plan-1',published_by:'coach-private-id',source_draft_id:'draft-private-id',user_id:id,atlas_sessions:doc.sessions};let rows=structuredClone(activityRecords),fail=false,imported=0;
  if(loggedIn)w.localStorage.setItem('atlas-session',JSON.stringify({access_token:'test',expires_at:Date.now()/1000+3600,user:{id}}));
  const blobs=[];w.URL.createObjectURL=blob=>{blobs.push(blob);return 'blob:http://localhost/test';};w.URL.revokeObjectURL=()=>{};
  const calls=[];let intercept=interceptRequest;
@@ -39,10 +41,91 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_activity_records')){if(options.method==='POST'||options.method==='PATCH'){if(fail)return new Response(JSON.stringify({message:'Falha de rede simulada'}),{status:503});rows=[{...rows[0],...JSON.parse(options.body)}];}data=rows;}
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
+ const HarnessDate=now?class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return new Date(now).getTime();}}:Date;
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,Date:HarnessDate,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,createNotificationSettings:notificationFactory,notificationTarget,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,set intercept(value){intercept=value;},get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
+test('workout prescriptions and records omit absent metrics while preserving explicit zero values',async()=>{
+ const calendarSessions=[
+  {id:'duration',date:'2030-01-15',type:'Força',km:null,minutes:30},
+  {id:'zero',date:'2030-01-15',type:'Corrida',km:0,minutes:0},
+  {id:'absent',date:'2030-01-15',type:'Mobilidade',km:null}
+ ];
+ const activityRecords=[
+  {session_id:'duration',km:null,minutes:15},
+  {session_id:'zero',km:0,minutes:0},
+  {session_id:'absent',km:null,minutes:null}
+ ].map(row=>({...row,user_id:'athlete',plan_id:'plan-1',status:'feito'}));
+ const h=await harness({calendarSessions,activityRecords,now:'2030-01-15T12:00:00'}),d=h.w.document;
+ try{
+  const card=id=>d.querySelector(`[data-record="${id}"]`).closest('article');
+  const duration=card('duration'),zero=card('zero'),absent=card('absent');
+  assert.deepEqual([...duration.querySelectorAll('dt')].map(el=>el.textContent),['Duração prevista']);
+  assert.equal(duration.querySelector('dd').textContent.trim(),'30 min');
+  assert.equal(duration.querySelector('[aria-label="Seu registro"] .muted').textContent,'15 min');
+  assert.deepEqual([...zero.querySelectorAll('dd')].map(el=>el.textContent.trim()),['0 km','0 min']);
+  assert.equal(zero.querySelector('[aria-label="Seu registro"] .muted').textContent,'0 km · 0 min');
+  assert.equal(absent.querySelector('[aria-label="Prescrição"]'),null);
+  assert.equal(absent.querySelector('[aria-label="Seu registro"] .muted'),null);
+  assert.equal(absent.querySelector('[aria-label="Seu registro"] .status').textContent,'feito');
+  assert.ok(!absent.textContent.includes('— km'));
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('workout instructions keep line breaks and render user-authored markup as text',async()=>{
+ const description='Aquecer por 5 minutos.\n<script>não executar()</script>',gym='Agachar com controle.\n<img src=x onerror="não executar()">',notes='Descansar entre séries.\n<b>Sem pressa.</b>';
+ const h=await harness({calendarSessions:[{id:'instructions',date:'2030-01-15',type:'Força',description,gym,notes}],now:'2030-01-15T12:00:00'}),d=h.w.document;
+ try{
+  const card=d.querySelector('[data-record=instructions]').closest('article');
+  assert.equal(card.querySelector('.workout-description').textContent,description);
+  assert.deepEqual([...card.querySelectorAll('.workout-instructions p')].map(el=>el.textContent),[gym,notes]);
+  assert.equal(card.querySelector('script, img, b'),null);
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('athlete navigation identifies only the active section and hides plan context on profile and staff areas',async()=>{
+ const h=await harness({coach:true}),d=h.w.document;
+ try{
+  assert.equal(d.querySelector('#planContext').hidden,true);
+  assert.equal(d.querySelector('#athleteHeading').hidden,true);
+  await h.area('athlete');
+  for(const control of d.querySelectorAll('nav[aria-label="Seções"] button, #account, #planSelect, #sync'))assert.equal(control.disabled,false,`${control.id||control.dataset.view} must be usable after switching areas`);
+  for(const view of ['today','calendar','progress','guide','profile','today']){
+   await h.click(`[data-view=${view}]`);
+   const current=d.querySelectorAll('nav[aria-label="Seções"] [aria-current]');
+   assert.equal(current.length,1);
+   assert.equal(current[0].dataset.view,view);
+   assert.equal(current[0].getAttribute('aria-current'),'page');
+   assert.equal(d.querySelector('#planContext').hidden,view==='profile');
+   assert.equal(d.querySelector('#athleteHeading').hidden,false);
+  }
+  await h.area('coach');
+  assert.equal(d.querySelector('nav[aria-label="Seções"]').hidden,true);
+  assert.equal(d.querySelector('#planContext').hidden,true);
+  assert.equal(d.querySelector('#athleteHeading').hidden,true);
+ }finally{await h.w.happyDOM.close();}
+ const owner=await harness({admin:true});
+ try{assert.equal(owner.w.document.querySelector('#planContext').hidden,true);assert.equal(owner.w.document.querySelector('#athleteHeading').hidden,true);}finally{await owner.w.happyDOM.close();}
+});
+
+test('workout selection keeps all sessions today, otherwise the next or last session, and handles an empty plan',async()=>{
+ const session=(id,date)=>({id,date,type:id});
+ const cases=[
+  {sessions:[session('past','2030-01-14'),session('today-run','2030-01-15'),session('today-strength','2030-01-15'),session('future','2030-01-16')],ids:['today-run','today-strength'],context:'Hoje · 2 sessões'},
+  {sessions:[session('past','2030-01-14'),session('next','2030-01-16'),session('future','2030-01-17')],ids:['next'],context:'Próxima sessão do plano'},
+  {sessions:[session('older','2030-01-13'),session('last','2030-01-14')],ids:['last'],context:'Última sessão do plano'},
+  {sessions:[],ids:[],context:'Ainda não há sessões neste plano'}
+ ];
+ for(const {sessions,ids,context} of cases){
+  const h=await harness({calendarSessions:sessions,now:'2030-01-15T12:00:00'}),d=h.w.document;
+  try{
+   assert.deepEqual([...d.querySelectorAll('#content [data-record]')].map(el=>el.dataset.record),ids);
+   assert.equal(d.querySelector('#workoutContext').textContent,context);
+  }finally{await h.w.happyDOM.close();}
+ }
+});
+
 test('athlete form keeps failed fields, saves and edits exact session, exports no auth data',async()=>{
  const h=await harness(),d=h.w.document;await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');assert.equal(d.querySelectorAll('[data-record]').length,2);
  await h.click('[data-record="sessao-001"]');const f=d.querySelector('#recordForm');f.elements.session_id.value='sessao-002';f.elements.status.value='feito';f.elements.km.value='3.25';f.elements.minutes.value='25';f.elements.notes.value='Teste';h.fail=true;await h.submit('#recordForm');assert.match(d.querySelector('#saveError').textContent,/campos foram mantidos/);assert.equal(f.elements.notes.value,'Teste');assert.equal(h.rows.length,0);
@@ -52,6 +135,60 @@ test('athlete form keeps failed fields, saves and edits exact session, exports n
  await h.click('#export');const exported=JSON.parse(await h.blobs[0].text());assert.equal(exported.plans.length,1);assert.equal(exported.records.length,1);assert.equal(exported.plans[0].guide.length,1);assert.ok(!JSON.stringify(exported).includes('user_id'));assert.ok(!JSON.stringify(exported).includes('access_token'));assert.ok(!JSON.stringify(exported).includes('coach-private-id'));assert.ok(!JSON.stringify(exported).includes('draft-private-id'));
  await h.click('[data-view=profile]');await h.click('#editProfile');await h.submit('#profileForm');assert.match(d.querySelector('#profileStatus').textContent,/salvo/);
  assert.ok(h.calls.some(c=>c.options.method==='PATCH'));await h.w.happyDOM.close();
+});
+
+test('notification messages and explicit opening preserve unsaved activity and profile forms',async()=>{
+ for(const mode of ['activity','profile']){
+  const h=await harness({serviceWorker:true}),d=h.w.document;
+  try{
+   if(mode==='activity'){await h.click('[data-view=calendar]');await h.click('[data-cal-mode=agenda]');await h.click('[data-record="sessao-001"]');d.querySelector('#recordForm').elements.notes.value='Relato ainda em edição';}
+   else{await h.click('[data-view=profile]');await h.click('#editProfile');d.querySelector('#profileForm').elements.name.value='Nome em edição';}
+   const form=d.querySelector(mode==='activity'?'#recordForm':'#profileForm'),before=h.calls.length;
+   h.w.navigator.serviceWorker.dispatchEvent(new h.w.MessageEvent('message',{data:{type:'atlas-notification-open',user_id:'athlete',url:'/app?view=progress'}}));
+   assert.equal(d.querySelector(mode==='activity'?'#recordForm':'#profileForm'),form);
+   assert.ok(d.querySelector('[data-notification-view=progress]'));
+   await h.click('[data-notification-view=progress]');
+   assert.equal(h.calls.length,before);assert.equal(d.querySelector(mode==='activity'?'#recordForm':'#profileForm'),form);
+   if(mode==='activity'){assert.equal(form.elements.notes.value,'Relato ainda em edição');assert.equal(d.querySelector('#recordDialog').open,true);assert.equal(d.querySelector('#activityDiscard').hidden,false);}
+   else{assert.equal(form.elements.name.value,'Nome em edição');assert.match(d.querySelector('#notice').textContent,/Salve ou cancele/);}
+  }finally{await h.w.happyDOM.close();}
+ }
+});
+
+test('a coach summary opens team monitoring through the current access checks instead of personal progress',async()=>{
+ const h=await harness({coach:true,linked:true,serviceWorker:true}),d=h.w.document;
+ try{
+  await h.area('athlete');
+  h.w.navigator.serviceWorker.dispatchEvent(new h.w.MessageEvent('message',{data:{type:'atlas-notification-open',user_id:'athlete',url:'/app?view=progress&area=coach'}}));
+  await h.click('[data-notification-view=progress]');assert.equal(d.querySelector('#areaSelect').value,'coach');assert.ok(d.querySelector('[data-page=monitoring].active'));assert.equal(d.querySelectorAll('[data-record]').length,0);
+  await h.area('athlete');h.coachStatus='inactive';await h.click('#sync');
+  h.w.navigator.serviceWorker.dispatchEvent(new h.w.MessageEvent('message',{data:{type:'atlas-notification-open',user_id:'athlete',url:'/app?view=progress&area=coach'}}));
+  await h.click('[data-notification-view=progress]');assert.equal(d.querySelector('#areaSelect').value,'athlete');assert.equal(d.querySelector('.management'),null);assert.match(d.querySelector('#notice').textContent,/não está disponível/);
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('notification cold starts choose the authorized area instead of the saved area',async()=>{
+ for(const item of [
+  {url:'http://localhost/app?view=progress&area=coach',preferredArea:'athlete',expected:'coach'},
+  {url:'http://localhost/app?view=calendar&area=athlete',preferredArea:'coach',expected:'athlete'}
+ ]){
+  const h=await harness({coach:true,linked:true,...item}),d=h.w.document;
+  try{assert.equal(d.querySelector('#areaSelect').value,item.expected);if(item.expected==='coach')assert.ok(d.querySelector('[data-page=monitoring].active'));else assert.ok(d.querySelector('.training-calendar'));assert.ok(h.calls.some(call=>call.url.includes('atlas_access_context')));assert.equal(h.calls.some(call=>call.options.method==='PATCH'),false,'opening an alert does not rewrite the account preference');}finally{await h.w.happyDOM.close();}
+ }
+ const revoked=await harness({url:'http://localhost/app?view=progress&area=coach'});
+ try{assert.equal(revoked.w.document.querySelector('#areaSelect').value,'athlete');assert.equal(revoked.w.document.querySelector('.management'),null);assert.match(revoked.w.document.querySelector('#notice').textContent,/não está disponível/);}finally{await revoked.w.happyDOM.close();}
+});
+
+test('athlete notifications respect a coach draft before switching to the personal calendar',async()=>{
+ const h=await harness({coach:true,linked:true,serviceWorker:true}),d=h.w.document;
+ try{
+  await h.click('[data-page=plans]');await h.click('#newPlan');d.querySelector('#destination').value='linked';await h.click('#confirmAction');d.querySelector('[data-field=name]').value='Plano ainda não salvo';
+  const before=h.calls.length;
+  h.w.navigator.serviceWorker.dispatchEvent(new h.w.MessageEvent('message',{data:{type:'atlas-notification-open',user_id:'athlete',url:'/app?view=calendar&area=athlete'}}));
+  await h.click('[data-notification-view=calendar]');assert.equal(h.calls.length,before);assert.equal(d.querySelector('[data-field=name]').value,'Plano ainda não salvo');assert.equal(d.querySelector('#areaSelect').value,'coach');
+ }finally{await h.w.happyDOM.close();}
+ const ready=await harness({coach:true,linked:true,serviceWorker:true});
+ try{ready.w.navigator.serviceWorker.dispatchEvent(new ready.w.MessageEvent('message',{data:{type:'atlas-notification-open',user_id:'athlete',url:'/app?view=calendar&area=athlete'}}));await ready.click('[data-notification-view=calendar]');assert.equal(ready.w.document.querySelector('#areaSelect').value,'athlete');assert.ok(ready.w.document.querySelector('.training-calendar'));}finally{await ready.w.happyDOM.close();}
 });
 
 test('the common profile preserves unsaved fields and saved identity across athlete and coach areas',async()=>{
@@ -84,6 +221,22 @@ test('owner boot enters management with team controls and no record actions',asy
 });
 test('expired app access clears the old session and returns to login without showing private data',async()=>{
  const h=await harness({expired:true});try{assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.match(h.w.location.href,/reason=expired/);assert.equal(h.w.document.querySelector('#appMain').hidden,true);assert.equal(h.w.document.querySelectorAll('[data-record]').length,0);}finally{await h.w.happyDOM.close();}
+});
+
+test('logout and both expiration paths hide data immediately and await bounded device cleanup',async()=>{
+ for(const mode of ['logout','initial-expiration','load-expiration']){
+  let release;const cleaned=[];
+  const cleanup=new Promise(resolve=>{release=resolve;});
+  const h=await harness({expired:mode==='initial-expiration',notificationFactory:()=>({busy:false,detach(){},mount(){},checkDeviceIdentity(){},resetDevice(user){cleaned.push(user);return cleanup;}})}),d=h.w.document;
+  try{
+   if(mode==='logout')await h.click('#account');
+   if(mode==='load-expiration'){h.intercept=url=>url.includes('atlas_access_context')?new Response(JSON.stringify({error_code:'bad_jwt'}),{status:401}):null;await h.click('#sync');}
+   assert.deepEqual(cleaned,['athlete']);assert.equal(d.querySelector('#appMain').hidden,true);assert.equal(d.querySelector('#content').textContent,'');assert.equal(d.querySelector('#accountName').textContent,'');assert.equal(h.w.localStorage.getItem('atlas-session'),null);assert.equal(h.w.location.pathname,'/app','navigation waits for the worker acknowledgement');
+   release();await tick();assert.equal(h.w.location.pathname,'/entrar');
+  }finally{release();await h.w.happyDOM.close();}
+ }
+ const stuck=await harness({notificationFactory:()=>({busy:false,detach(){},mount(){},checkDeviceIdentity(){},resetDevice(){return new Promise(()=>{});}})});
+ try{await stuck.click('#account');assert.equal(stuck.w.document.querySelector('#appMain').hidden,true);await new Promise(resolve=>setTimeout(resolve,2100));assert.equal(stuck.w.location.pathname,'/entrar','a missing worker acknowledgement cannot trap logout');}finally{await stuck.w.happyDOM.close();}
 });
 
 test('coach switches to personal athlete records without another login; revoked area falls back safely',async()=>{

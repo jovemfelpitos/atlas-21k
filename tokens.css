@@ -1,0 +1,54 @@
+:root {
+  color-scheme: dark;
+  --color-brand-base: #0B1117;
+  --color-brand-energy: #C9FF60;
+  --color-brand-text: #F3F6F9;
+  --color-brand-support: #AFC2D1;
+
+  --color-background: var(--color-brand-base);
+  --color-surface: #1B2834;
+  --color-surface-subtle: #15212C;
+  --color-surface-raised: #243440;
+  --color-surface-avatar: #243646;
+  --color-surface-status: #1C2C37;
+  --color-border: #334452;
+  --color-border-control: #708798;
+  --color-text: var(--color-brand-text);
+  --color-text-muted: var(--color-brand-support);
+  --color-text-tertiary: #8B9BA9;
+  --color-action: var(--color-brand-energy);
+  --color-action-text: var(--color-brand-base);
+  --color-focus: var(--color-brand-energy);
+  --color-success: #BCF296;
+  --color-error: #FFB8AD;
+  --color-warning: #E5B27D;
+  --color-selection: #304632;
+  --color-preview-start: #263744;
+  --color-preview-end: #182430;
+  --color-preview-border: #435765;
+  --color-preview-badge: #354433;
+  --color-preview-badge-border: #6B8051;
+  --color-preview-badge-text: #E2FDA8;
+
+  --font-body: "Sora", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --radius-control: 12px;
+  --radius-card: 20px;
+
+  /* Compatibility names used by the existing app and public components. */
+  --bg: var(--color-background);
+  --card: var(--color-surface);
+  --line: var(--color-border);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --lime: var(--color-action);
+}

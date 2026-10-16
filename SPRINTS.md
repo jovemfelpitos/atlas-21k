@@ -1,5 +1,9 @@
 # Atlas Run — sprints 0 a 4
 
+## Ciclo aprovado em 16/10/2026
+
+Execução uma sprint por vez: UX-07 publicação/alertas em andamento, seguida de UX-08 fluidez mobile, UX-09 evolução, UX-10 treinador no celular e UX-11 corrida + musculação. A identidade e o registrador mobile previamente aprovados entram na publicação da UX-07. Migração de alertas aplicada com dados preservados; aceite em aparelhos físicos continua explícito. Escopo, dependências e critérios em [docs/UX07-PUBLICACAO.md](docs/UX07-PUBLICACAO.md).
+
 ## Próximo ciclo: revisão de experiência
 
 Planejamento de 12/10/2026 em [PLANEJAMENTO-UX.md](PLANEJAMENTO-UX.md): conta única com áreas atleta/treinador, gestão de usuários, landing, acesso e recuperação, perfil, calendário e registro. UX-01 foi implementada em 13/10/2026; UX-02 e UX-03 entregues em 14/10/2026. SMTP, confirmação/recuperação e perfil comum estão disponíveis. UX-04 e UX-05 também foram entregues em 14/10/2026. UX-06 foi concluída para o piloto em 15/10 por aceite do dono, com passos A/B/dono e troca de senha no computador/celular aprovados. Demora ao trocar de área e testes complementares não realizados ficaram no backlog. Evidências e priorização para as antigas sprints 5 (adiar biblioteca), 6 (reduzir ao piloto atual; isolamento obrigatório antes de assessorias independentes) e 7 (adiar cobrança) em [PILOTO-UX06.md](PILOTO-UX06.md).

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
-import {createActivityEditor,validateActivity,persistActivity} from '../activity.js';
+import {createActivityEditor,validateActivity,persistActivity,activityPace,stepActivityDistance} from '../activity.js';
 import {monitoringRows,summarize} from '../monitoring.js';
 
 const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
@@ -98,4 +98,90 @@ test('blank and zero remain distinct in calendar records and monitoring totals a
  const plan={id:'plan',user_id:'athlete',state:'published',atlas_sessions:[{id:'session',date:'2026-10-14'},{id:'other',date:'2026-10-14'}]};
  const record={...identity,...validateActivity(values({km:'0',pain:'0'}))};const rows=monitoringRows([plan],[record],{},'2026-10-14');
  assert.equal(rows[0].state,'today');assert.equal(rows[1].record.pain,0);assert.equal(rows[1].record.effort,null);const summary=summarize(rows,'2026-10-14');assert.equal(summary.actualKm.value,0);assert.equal(summary.actualKm.informed,1);assert.equal(summary.actualMinutes.value,null);assert.equal(summary.actualMinutes.informed,0);
+});
+
+test('100 m distance steps preserve typed decimal precision and stay within the permitted range',()=>{
+ assert.equal(stepActivityDistance('',1),'0.1');assert.equal(stepActivityDistance('',-1),'0');
+ assert.equal(stepActivityDistance('5,05',1),'5.15');assert.equal(stepActivityDistance('5.15',-1),'5.05');
+ assert.equal(stepActivityDistance('0,1234567890123456789',1),'0.2234567890123456789');
+ assert.equal(stepActivityDistance('0.05',-1),'0');assert.equal(stepActivityDistance('999.95',1),'1000');
+ for(const value of ['abc','1e2','-1','1001','2,3.4'])assert.equal(stepActivityDistance(value,1),null);
+});
+
+test('average pace uses completed real values and suppresses incomplete, skipped or invalid metrics',()=>{
+ assert.equal(activityPace('5','30','feito'),'6:00');assert.equal(activityPace('3,5','21,5','adaptado'),'6:09');
+ assert.equal(activityPace('1','4.999999','feito'),'5:00');
+ for(const [km,minutes,status] of [['','30','feito'],['0','30','feito'],['5','','feito'],['5','0','feito'],['5','30','não feito'],['1e2','30','feito'],['2','-10','feito'],['1001','30','feito'],['5','1441','feito']])assert.equal(activityPace(km,minutes,status),'');
+});
+
+test('status buttons, distance controls and time selectors calculate pace without prescribing actual values',async()=>{
+ const h=await editorHarness();try{
+  const get=id=>h.dialog.querySelector('#'+id),buttons=h.dialog.querySelectorAll('[data-activity-status]');
+  assert.equal(Array.from(buttons).filter(button=>button.getAttribute('aria-pressed')==='true').length,0);
+  assert.equal(get('activityFeelings').open,false);assert.equal(h.form.elements.minutes.value,'');
+  h.dialog.querySelector('[data-activity-status="feito"]').click();assert.equal(h.form.elements.status.value,'feito');
+  await h.change('km','5,05');h.dialog.querySelector('[data-distance-step="1"]').click();assert.equal(h.form.elements.km.value,'5,15');
+  await h.change('km','5');await h.change('durationMinutes','30');
+  assert.equal(h.form.elements.durationHours.value,'0');assert.equal(h.form.elements.durationSeconds.value,'0');assert.equal(h.form.elements.minutes.value,'30');
+  await h.change('durationSeconds','15');
+  assert.equal(h.form.elements.minutes.value,'30.25');assert.equal(get('activityPace').textContent,'6:03 min/km');
+  h.dialog.querySelector('[data-activity-status="não feito"]').click();assert.equal(get('activityMetrics').hidden,true);assert.equal(get('activityPace').textContent,'—');assert.equal(h.form.elements.km.value,'5');
+  get('activityShowResults').click();assert.equal(get('activityMetrics').hidden,false);assert.equal(get('activityShowResults').getAttribute('aria-expanded'),'true');
+  h.dialog.querySelector('[data-activity-status="adaptado"]').click();assert.equal(get('activityPace').textContent,'6:03 min/km');
+  h.dialog.querySelector('[data-activity-clear="minutes"]').click();assert.equal(h.form.elements.minutes.value,'');assert.equal(h.form.elements.durationMinutes.value,'');assert.equal(get('activityPace').textContent,'—');
+  await h.change('durationSeconds','0');assert.equal(h.form.elements.minutes.value,'0');
+  h.dialog.querySelector('[data-activity-clear="km"]').click();assert.equal(h.form.elements.km.value,'');
+  await h.submit();assert.equal(h.saved[0].minutes,0);assert.equal(h.saved[0].km,null);
+ }finally{await h.close();}
+});
+
+test('opening and saving legacy decimal minutes preserves their exact stored precision until time is edited',async()=>{
+ const record={...existing,minutes:'25.1234567890123'},h=await editorHarness({record});try{
+  assert.equal(h.form.elements.minutes.value,record.minutes);assert.equal(h.editor.dirty,false);
+  h.dialog.querySelector('#activityFeelings').open=true;await h.change('notes','Só o relato mudou');
+  assert.equal(h.form.elements.minutes.value,record.minutes);await h.submit();
+  assert.equal(h.saved[0].minutes,Number(record.minutes));
+ }finally{await h.close();}
+ const edited=await editorHarness({record});try{
+  await edited.change('durationHours','1');assert.ok(Number(edited.form.elements.minutes.value)>60);assert.equal(edited.editor.dirty,true);
+ }finally{await edited.close();}
+ const tiny=await editorHarness({record:{...existing,minutes:1e-9}});try{
+  assert.equal(tiny.editor.dirty,false);assert.equal(tiny.form.elements.minutes.value,'0.000000001');await tiny.submit();assert.equal(tiny.saved[0].minutes,1e-9);
+ }finally{await tiny.close();}
+ const boundaryMinutes=1439.9999999999998,boundary=await editorHarness({record:{...existing,minutes:boundaryMinutes}});try{
+  assert.equal(boundary.form.elements.durationHours.value,'24');assert.equal(boundary.form.elements.durationMinutes.value,'0');assert.equal(boundary.form.elements.durationSeconds.value,'0');
+  assert.equal(boundary.editor.dirty,false);assert.equal(boundary.form.elements.minutes.value,String(boundaryMinutes));await boundary.submit();assert.equal(boundary.saved[0].minutes,boundaryMinutes);
+ }finally{await boundary.close();}
+});
+
+test('optional prescribed metrics stay absent for strength sessions and errors target the visible controls',async()=>{
+ const h=await editorHarness();try{
+  h.editor.close();Object.assign(h.plan.sessions[0],{km:null,minutes:null,type:'Força',description:'Séries\ncom pausa'});h.open();
+  assert.doesNotMatch(h.dialog.querySelector('#recordContext').textContent,/— km|— min|Previsto:/);
+  await h.submit();assert.match(h.dialog.querySelector('#activityStatusError').textContent,/Escolha/);
+  assert.equal(h.w.document.activeElement.dataset.activityStatus,'feito');
+  await h.change('status','feito');await h.change('durationHours','24');await h.change('durationMinutes','1');await h.submit();
+  assert.equal(h.saved.length,0);assert.match(h.dialog.querySelector('#activityMinutesError').textContent,/1440/);assert.equal(h.w.document.activeElement.id,'activityHours');
+ }finally{await h.close();}
+});
+
+test('moving from an existing activity to an unrecorded session never carries the hidden duration forward',async()=>{
+ const h=await editorHarness({record:existing});try{
+  assert.equal(h.form.elements.minutes.value,'25');assert.equal(h.editor.close(),true);
+  h.editor.open({user_id:'athlete',plan:h.plan,session:{...h.plan.sessions[0],id:'new-session'},record:null});
+  assert.equal(h.form.elements.minutes.value,'');assert.equal(h.form.elements.durationMinutes.value,'');assert.equal(h.editor.dirty,false);
+  h.dialog.querySelector('[data-activity-status="feito"]').click();await h.submit();assert.equal(h.saved[0].minutes,null);
+ }finally{await h.close();}
+});
+
+test('visual viewport listeners follow the open dialog lifecycle and are removed on reset',async()=>{
+ const w=new Window();w.document.write('<dialog></dialog>');const viewport=new w.EventTarget();viewport.height=480;viewport.offsetTop=12;
+ Object.defineProperty(w,'visualViewport',{value:viewport,configurable:true});
+ const dialog=w.document.querySelector('dialog'),editor=createActivityEditor({window:w,dialog,save:async()=>{},onSaved:()=>{}});
+ const request={user_id:'athlete',plan:{id:'plan',name:'Plano'},session:{id:'session',date:'2026-10-14',type:'Força'}};
+ try{
+  editor.open(request);assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'480px');viewport.height=350;viewport.dispatchEvent(new w.Event('resize'));assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'350px');
+  editor.reset();assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'');viewport.height=300;viewport.dispatchEvent(new w.Event('resize'));assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'');
+  editor.open(request);assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'300px');assert.equal(editor.close(),true);viewport.dispatchEvent(new w.Event('scroll'));assert.equal(dialog.style.getPropertyValue('--activity-viewport-height'),'');
+ }finally{await w.happyDOM.close();}
 });
