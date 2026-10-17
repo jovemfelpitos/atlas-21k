@@ -12,6 +12,7 @@ import {safeNext} from '../auth-client.js';
 import {createAvatarStore,createProfileEditor,initials} from '../profile.js';
 import {accountAreas,areaLabels} from '../account-areas.js';
 import {readRows, monitoringRows, summaryHTML, commentsHTML} from '../monitoring.js';
+import {createProgressState,progressHTML,selectProgressWeek} from '../progress.js';
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
 const html=readFileSync(new URL('../app.html',import.meta.url),'utf8').replace(/<script[\s\S]*?<\/script>/g,'');
 const tick=()=>new Promise(r=>setTimeout(r,20));
@@ -43,7 +44,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
  const HarnessDate=now?class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return new Date(now).getTime();}}:Date;
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,Date:HarnessDate,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,createNotificationSettings:notificationFactory,notificationTarget,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,Date:HarnessDate,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,createNotificationSettings:notificationFactory,notificationTarget,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,createProgressState,progressHTML,selectProgressWeek,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,revokedURLs,set intercept(value){intercept=value;},get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
@@ -470,5 +471,36 @@ test('the own avatar is reused across areas in memory and invalidated for a new 
   const nextURL=d.querySelector('#accountAvatar').src;assert.notEqual(nextURL,firstURL);
   assert.equal(h.w.localStorage.length,1);assert.ok(!h.w.localStorage.getItem('atlas-session').includes('avatar_path'));
   await h.click('#account');assert.deepEqual(h.revokedURLs,[firstURL,nextURL]);assert.equal(d.querySelector('#accountAvatar').hasAttribute('src'),false);assert.equal(h.w.localStorage.length,0);
+ }finally{await h.w.happyDOM.close();}
+});
+
+
+test('athlete progress changes weeks locally, preserves selection after saving and guards an unsaved report',async()=>{
+ const calendarSessions=[{id:'first',date:'2030-01-14',type:'Corrida',km:4,minutes:24},{id:'second',date:'2030-01-21',type:'Força',km:null,minutes:30}];
+ const activityRecords=[{user_id:'athlete',plan_id:'plan-1',session_id:'second',status:'feito',km:null,minutes:20,effort:0,pain:0,notes:'Relato',updated_at:'2030-01-21T12:00:00Z'}];
+ const h=await harness({calendarSessions,activityRecords,now:'2030-01-22T12:00:00'}),d=h.w.document;
+ const select=async week=>{const el=d.querySelector('#progressWeek');el.value=week;el.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();};
+ try{
+  await h.click('[data-view=progress]');const calls=h.calls.length;
+  await select('2030-01-21');assert.equal(d.activeElement.id,'progressWeek');assert.equal(h.calls.length,calls);
+  assert.equal(d.querySelector('.progress-actual .progress-value').textContent,'Não informado');assert.match(d.querySelector('.progress-pace .progress-actual').textContent,/Indisponível/);
+  await h.click('[data-record=second]');const form=d.querySelector('#recordForm');assert.equal(form.elements.effort.value,'0');form.elements.notes.value='Novo relato';
+  await select('2030-01-14');assert.equal(d.querySelector('#progressWeek').value,'2030-01-21');assert.equal(d.querySelector('#activityDiscard').hidden,false);assert.equal(form.elements.notes.value,'Novo relato');
+  await h.click('#keepActivity');await h.submit('#recordForm');assert.equal(h.rows[0].notes,'Novo relato');assert.equal(d.querySelector('#progressWeek').value,'2030-01-21');
+  await h.click('[data-progress-week="2030-01-14"]');assert.equal(d.activeElement.id,'progressPeriod');assert.equal(d.querySelectorAll('[data-record]').length,0);
+  await h.click('[data-view=calendar]');await h.click('[data-view=progress]');assert.equal(d.querySelector('#progressWeek').value,'2030-01-14');
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('progress week and records remain separate for archived versions and switching plans preserves each selection',async()=>{
+ const calendarSessions=[{id:'same',date:'2030-01-14',type:'Corrida',km:4,minutes:24},{id:'other',date:'2030-01-21',type:'Força',minutes:30}];
+ const h=await harness({calendarSessions,history:true,activityRecords:[{user_id:'athlete',plan_id:'plan-1',session_id:'same',status:'feito',km:4,minutes:24}],now:'2030-01-22T12:00:00'}),d=h.w.document;
+ const change=async(id,value)=>{const el=d.querySelector(id);el.value=value;el.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();};
+ try{
+  await h.click('[data-view=progress]');assert.equal(d.querySelectorAll('[data-record]').length,1);
+  await change('#progressWeek','2030-01-21');await change('#planSelect','old');
+  assert.equal(d.querySelector('#progressWeek').value,'2030-01-14');assert.equal(d.querySelectorAll('[data-record]').length,0);
+  assert.match(d.querySelector('.progress-actual dd').textContent,/Não informado/);
+  await change('#planSelect','plan-1');assert.equal(d.querySelector('#progressWeek').value,'2030-01-21');
  }finally{await h.w.happyDOM.close();}
 });

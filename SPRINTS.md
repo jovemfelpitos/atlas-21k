@@ -2,6 +2,8 @@
 
 ## Ciclo aprovado em 16/10/2026
 
+UX-09 implementada em 17/10/2026: seleção semanal, comparações previstas/realizadas, pace com pares válidos, histórico compacto e exportação existente. 143 testes aprovados, sem alteração de banco/permissões; critérios e limites em [docs/UX09-EVOLUCAO.md](docs/UX09-EVOLUCAO.md). Próxima: UX-10, treinador no celular.
+
 UX-08 publicada em 16/10/2026 e conferida em produção em 17/10/2026: requisições independentes paralelas, perfil retornado pela regularização sem leitura duplicada, preferência confirmada junto aos dados, avatar em memória e feedback mobile. 135 testes aprovados; acesso/rascunhos e configuração dos alertas preservados; publicação, medição local e limites em [docs/UX08-MOBILE.md](docs/UX08-MOBILE.md). Próxima sprint: UX-09. Aceite físico dos alertas da UX-07 continua pendente.
 
 Execução uma sprint por vez: UX-07 publicação/alertas publicada e verificada tecnicamente, seguida de UX-08 fluidez mobile, UX-09 evolução, UX-10 treinador no celular e UX-11 corrida + musculação. A identidade e o registrador mobile previamente aprovados estão publicados. Migração de alertas aplicada com dados preservados; 124 testes aprovados; configuração/dispatcher verificados em produção sem envio. Aceite em aparelhos Android/iPhone físicos permanece pendente. Escopo, evidências, dependências e critérios em [docs/UX07-PUBLICACAO.md](docs/UX07-PUBLICACAO.md).
