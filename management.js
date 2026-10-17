@@ -31,11 +31,13 @@ export function createManagement({root, role, enabled = true, userId, request, n
 
  async function load() {
   if(disposed)return;
-  const result = await Promise.all([
+  // Commit roster and table results together so a failed read cannot leave a
+  // partially refreshed workspace.
+  const [result, userResult] = await Promise.all([Promise.all([
    '/rest/v1/atlas_profiles?select=*&order=name,user_id', '/rest/v1/atlas_coaches?select=*&order=user_id', '/rest/v1/atlas_coach_athletes?select=*&order=coach_id,athlete_id',
    '/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id', '/rest/v1/atlas_plan_drafts?select=*&order=updated_at.desc,id', '/rest/v1/atlas_plan_events?select=*&order=created_at.desc,id',
    '/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id', '/rest/v1/atlas_session_comments?select=*&order=created_at,id'
-  ].map(path => readRows(request,path)));
+  ].map(path => readRows(request,path))), owner ? fetchUsers() : null]);
   if(disposed)return;
   [people, coaches, links, plans, drafts, events, records, comments] = result;
   // RLS permits a coach to read their own athlete data too. This workspace shows
@@ -49,9 +51,10 @@ export function createManagement({root, role, enabled = true, userId, request, n
    records = records.filter(r => managed.has(r.user_id));
    comments = comments.filter(c => managed.has(c.user_id));
   }
-  if (owner) await loadUsers();
+  if (owner) {users=userResult.users;usersTotal=userResult.total;}
  }
- async function loadUsers() {if(disposed)return;const data=await rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});if(disposed)return;users=data.users;usersTotal=data.total;}
+ function fetchUsers() {return rpc('atlas_list_users',{search_text:usersSearch,user_filter:usersFilter,page_offset:usersOffset,page_size:25});}
+ async function loadUsers() {if(disposed)return;const data=await fetchUsers();if(disposed)return;users=data.users;usersTotal=data.total;}
 
  function previewPlan(document) {
   const sessions = document.sessions;
@@ -144,7 +147,8 @@ export function createManagement({root, role, enabled = true, userId, request, n
  }
  function render() {
   if(disposed)return;
-  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${page === key || (page==='activity'&&key===(activityBack==='calendar'?'plans':'monitoring') || page==='calendar'&&key==='plans') ? 'active' : ''}" ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, calendar:calendarPage, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
+  const activePage = page==='activity' ? (activityBack==='calendar'?'plans':'monitoring') : page==='calendar' ? 'plans' : page;
+  root.innerHTML = `<div class="management"><nav class="management-nav" aria-label="Gestão">${[['overview', 'Visão geral'], ['athletes', 'Atletas'], ['plans', 'Planos'], ['monitoring','Acompanhamento'], ...(owner ? [['team', 'Usuários']] : []), ['staffProfile', 'Meu perfil']].map(([key, label]) => `<button data-page="${key}" class="${activePage===key ? 'active' : ''}" ${activePage===key ? 'aria-current="page"' : ''} ${busy ? 'disabled' : ''}>${label}</button>`).join('')}</nav><p id="managementError" class="error" role="alert"></p>${!enabled ? '<h2>Acesso de treinador desativado</h2><p>Fale com o dono para reativar sua conta.</p>' : ({overview, athletes: athleteList, athlete: athleteDetail, plans: planList, plan: planDetail, calendar:calendarPage, monitoring:monitoringPage,activity:activityPage, import: importPage, editor: editorPage, team: teamPage, staffProfile: profilePage})[page]()}</div>`;
   root.querySelector('#filterAthlete')?.setAttribute('data-current', selectedAthlete);
   if (root.querySelector('#filterAthlete')) root.querySelector('#filterAthlete').value = selectedAthlete;
   if(renderProfile)renderProfile(page==='staffProfile'?root.querySelector('#profilePanel'):null);
