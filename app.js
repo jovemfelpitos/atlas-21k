@@ -2,7 +2,8 @@ import {createManagement} from './management.js';
 import {safeNext} from './auth-client.js';
 import {createAvatarStore,createProfileEditor,initials} from './profile.js';
 import {accountAreas, areaLabels} from './account-areas.js';
-import {readRows, monitoringRows, summaryHTML, commentsHTML} from './monitoring.js';
+import {readRows, monitoringRows, commentsHTML} from './monitoring.js';
+import {createProgressState,progressHTML,selectProgressWeek} from './progress.js';
 import {createCalendarState,calendarHTML,handleCalendarAction} from './calendar.js';
 import {createActivityEditor,persistActivity} from './activity.js';
 import {createNotificationSettings,notificationTarget} from './notifications.js';
@@ -46,6 +47,8 @@ function updateIdentity(){const identity=$('#accountIdentity');identity.hidden=!
 function notice(t){$('#notice').textContent=t;$('#account').textContent=session?'Sair':'Entrar';}
 const current=()=>plans.find(p=>p.id===active);
 const calendars=new Map();
+const progressStates=new Map();
+function progressState(){if(!progressStates.has(active))progressStates.set(active,createProgressState());return progressStates.get(active);}
 function calendarState(){if(!calendars.has(active))calendars.set(active,createCalendarState(monitoringRows([current()],records,{plan:active})));return calendars.get(active);}
 const rec=id=>records.find(r=>r.plan_id===active&&r.session_id===id);
 const dateLabel=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
@@ -124,7 +127,7 @@ function render(){
  else if(view==='today'){const today=new Date().toLocaleDateString('en-CA');const ss=p.sessions.filter(s=>s.date===today),next=p.sessions.find(s=>s.date>today),selected=ss.length?ss:[next||p.sessions.at(-1)].filter(Boolean);$('#workoutContext').hidden=false;$('#workoutContext').textContent=ss.length?`Hoje · ${ss.length} ${ss.length===1?'sessão':'sessões'}`:next?'Próxima sessão do plano':selected.length?'Última sessão do plano':'Ainda não há sessões neste plano';html=selected.map(workout).join('');}
  else if(view==='calendar')html=calendarHTML({rows:monitoringRows([p],records,{plan:active}),state:calendarState(),renderSession:row=>workout(row.session),showHeading:false});
  else if(view==='guide')html=p.guide.map(g=>`<details><summary>${esc(g.tema)}</summary><p>${esc(g.orientacao)}</p></details>`).join('');
- else if(view==='progress'){const rs=records.filter(r=>r.plan_id===active);html=`${summaryHTML(monitoringRows([p],records,{plan:active}))}${rs.map(r=>`<article class="card"><h3>${esc(p.sessions.find(s=>s.id===r.session_id)?.type)} · ${esc(r.status)}</h3><p>${r.km??'—'} km · ${r.minutes??'—'} min · esforço ${r.effort??'—'}/10 · dor ${r.pain??'—'}/10</p><p>${esc(r.recovery)} · ${esc(r.notes)}</p><button data-record="${esc(r.session_id)}">Editar</button>${feedback(r.session_id).length?commentsHTML(feedback(r.session_id)):''}</article>`).join('')}${p.sessions.filter(s=>!rec(s.id)&&feedback(s.id).length).map(s=>`<article class="card"><h3>${esc(dateLabel(s.date))} · ${esc(s.type)}</h3>${commentsHTML(feedback(s.id))}</article>`).join('')}<button id="export" class="primary">Exportar plano, registros e comentários para GPT</button><button id="reload" class="secondary">Sincronizar novamente</button>`;}
+ else if(view==='progress')html=progressHTML({rows:monitoringRows([p],records,{plan:active}),state:progressState(),comments})+'<details class="progress-tools"><summary>Exportar meus dados</summary><p>Baixe todos os planos, registros e comentários disponíveis na sua área, além da semana selecionada.</p><button id="export" class="secondary">Baixar dados em JSON</button></details>';
  $('#content').innerHTML=html+(session&&!demo&&view==='profile'?'<details class="app-data-access"><summary>Quem pode consultar meus registros?</summary><p>Seus relatos podem ser consultados pelo admin dono e pelos treinadores vinculados a você. Somente você pode editar seus registros de atividade.</p></details>':'');
  if(view==='profile'&&!demo)mountProfile($('#profilePanel'));
 }
@@ -134,6 +137,7 @@ function openRecord(id){if(admin||loading||busy||activityEditor.busy)return;cons
 document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||b.closest('#recordDialog')||b.closest('.notification-panel'))return;if(notificationSettings.busy)return;if(activityBlocksNavigation())return;
  if(b.dataset.notificationView){if(loading||busy)return;if(profileEditor.dirty||profileEditor.busy||management?.dirty||management?.busy){notice('Salve ou cancele a edição antes de abrir a atualização.');return;}const target=notificationTarget('/app?view='+encodeURIComponent(b.dataset.notificationView)+'&area='+encodeURIComponent(b.dataset.notificationArea));if(target)await openNotification(target);return;}
  if(!admin&&view==='calendar'&&!loading&&current()&&handleCalendarAction(e,calendarState(),render))return;
+ if(!admin&&view==='progress'&&!loading&&!busy&&current()&&b.hasAttribute('data-progress-week')){if(selectProgressWeek(monitoringRows([current()],records,{plan:active}),progressState(),b.dataset.progressWeek)){render();$('#progressPeriod')?.focus();}return;}
  if(loading&&b.dataset.view)return;
  if(b.dataset.area){await switchArea(b.dataset.area);return;}if(b.hasAttribute('data-enable-coach')&&!admin){if(busy||loading||profileEditor.busy)return;if(profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de ativar outra área.');return;}busy=true;b.disabled=true;try{await enableCoach();}catch(error){notice(error.message);}finally{busy=false;render();profileStateChanged();}return;}
  if(b.dataset.view){if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de sair.');return;}view=b.dataset.view;render();}if(b.dataset.close)$('#'+b.dataset.close).close();if(b.dataset.record)openRecord(b.dataset.record);
@@ -142,7 +146,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(b.id==='export'){if(!demo&&!loaded)return;download('atlas-run-dados.json',JSON.stringify({app:'Atlas Run',demo,exported_at:new Date().toISOString(),plans:plans.map(({user_id,published_by,source_draft_id,atlas_sessions,...p})=>({...p,sessions:p.sessions.map(({user_id,plan_id,...s})=>s)})),records:records.map(({user_id,...r})=>r),comments:comments.map(({id,user_id,author_id,...c})=>c)},null,2));}
 
 });
-document.addEventListener('change',e=>{if(e.target.id==='areaSelect'){switchArea(e.target.value);}if(e.target.id==='planSelect'){if(activityBlocksNavigation()){e.target.value=active;return;}if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de trocar de plano.');e.target.value=active;return;}active=e.target.value;render();}});
+document.addEventListener('change',e=>{if(e.target.id==='progressWeek'&&!admin&&view==='progress'&&current()){if(loading||busy||activityBlocksNavigation()){e.target.value=progressState().week;return;}if(selectProgressWeek(monitoringRows([current()],records,{plan:active}),progressState(),e.target.value)){render();$('#progressWeek')?.focus();}return;}if(e.target.id==='areaSelect'){switchArea(e.target.value);}if(e.target.id==='planSelect'){if(activityBlocksNavigation()){e.target.value=active;return;}if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de trocar de plano.');e.target.value=active;return;}active=e.target.value;render();}});
 function loginDestination(reason=''){return '/entrar?next='+encodeURIComponent(safeNext('/app'+window.location.search))+(reason?'&reason='+reason:'');}
 function expiredAccess(error){return error.status===401||error.status===403||['refresh_token_not_found','refresh_token_already_used','session_not_found','bad_jwt'].includes(error.code);}
 $('#account').onclick=async()=>{if(activityBlocksNavigation())return;if(busy||loading||notificationSettings.busy||profileEditor.busy||management?.busy)return;if(management?.dirty||profileEditor.dirty){notice(profileEditor.dirty?'Salve ou cancele a edição do perfil antes de sair.':'Salve ou descarte as alterações antes de sair.');return;}if(session){const expected=sessionVersion;try{await request('/auth/v1/logout',{method:'POST'})}catch{}if(expected!==sessionVersion)return;endPrivateView('logout',true);return;}window.location.assign('/entrar');};
@@ -151,7 +155,7 @@ async function endPrivateView(reason='expired',removeStored=false){
  sessionVersion++;for(const controller of pendingRequests)controller.abort();pendingRequests.clear();refresh=null;
  if(removeStored)keepSession(null);else session=null;
  activityEditor?.reset();profileEditor.discard();profileEditor.detach();avatars.clear();management?.destroy();management=null;
- plans=[];records=[];comments=[];calendars.clear();profile=null;active=null;loaded=false;loading=false;loadError='';
+ plans=[];records=[];comments=[];calendars.clear();progressStates.clear();profile=null;active=null;loaded=false;loading=false;loadError='';
  $('#content').removeAttribute('aria-busy');
  $('#content').replaceChildren();$('#accountIdentity').hidden=true;$('#accountName').textContent='';$('#accountArea').textContent='';$('#accountInitials').textContent='';$('#accountAvatar').removeAttribute('src');$('#goal').textContent='';$('#notice').textContent='';$('#appMain').hidden=true;
  // Hide and invalidate private state before awaiting browser cleanup. Navigation must

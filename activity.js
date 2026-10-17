@@ -1,4 +1,4 @@
-import {escapeHTML as esc,displayDate,amount,sessionKey} from './monitoring.js';
+import {escapeHTML as esc,displayDate,amount,sessionKey,paceLabel} from './monitoring.js';
 
 const fields=['status','km','minutes','effort','pain','recovery','notes'];
 const numbers=['km','minutes','effort','pain'];
@@ -65,8 +65,7 @@ export function activityPace(km,minutes,status){
  if(!/^\d*(?:[.,]\d+)?$/.test(String(km).trim())||!/^\d*(?:[.,]\d+)?$/.test(String(minutes).trim()))return '';
  const distance=numericText(km),duration=numericText(minutes);
  if(status==='não feito'||!Number.isFinite(distance)||!Number.isFinite(duration)||distance<=0||distance>1000||duration<=0||duration>1440)return '';
- const seconds=Math.round(duration*60/distance);
- return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+ return paceLabel(distance,duration);
 }
 // Decimal arithmetic keeps a typed exact distance intact when a 100 m step is used.
 export function stepActivityDistance(value,direction){

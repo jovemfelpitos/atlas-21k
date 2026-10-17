@@ -3,6 +3,11 @@ export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => 
 export const todayDate = () => {const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 export const displayDate = value => value ? new Date(value+'T12:00:00').toLocaleDateString('pt-BR') : '—';
 export const amount = (value, unit) => value == null ? 'Não informado' : Number(value).toLocaleString('pt-BR',{maximumFractionDigits:2})+' '+unit;
+export function paceLabel(km, minutes) {
+ if(km==null||minutes==null||km===''||minutes===''||!Number.isFinite(Number(km))||!Number.isFinite(Number(minutes))||Number(km)<=0||Number(minutes)<=0)return '';
+ const seconds=Math.round(Number(minutes)*60/Number(km));
+ return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+}
 export const sessionKey = (user, plan, session) => JSON.stringify([user,plan,session]);
 export async function readRows(request, path) {
  const rows = [], size = 500;
