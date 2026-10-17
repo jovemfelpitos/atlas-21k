@@ -49,22 +49,43 @@ const calendars=new Map();
 function calendarState(){if(!calendars.has(active))calendars.set(active,createCalendarState(monitoringRows([current()],records,{plan:active})));return calendars.get(active);}
 const rec=id=>records.find(r=>r.plan_id===active&&r.session_id===id);
 const dateLabel=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
-async function load(preferred,staffPage){if(activityBlocksNavigation())return;if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de sincronizar.');return;}profileEditor.detach();notificationSettings.detach();avatars.clear();loaded=false;loading=true;loadError='';management?.destroy();management=null;plans=[];records=[];comments=[];$('#areaSelect').disabled=true;$('#sync').disabled=true;$('#content').innerHTML='<p role="status">Carregando sua área…</p>';try{
- if(!session){render();return;}
- const expected=sessionVersion;
- await post('/rest/v1/rpc/atlas_ensure_profile',{});
- const access=await post('/rest/v1/rpc/atlas_access_context',{});accessState=accountAreas(access,preferred);role=accessState.selected;admin=role!=='athlete';
- const ps=await request('/rest/v1/atlas_profiles?select=*&user_id=eq.'+encodeURIComponent(session.user.id));profile=ps.find(p=>p.user_id===session.user.id);
- if(!profile)throw Error('Seu perfil não está disponível. Tente sincronizar novamente.');
- if(admin){const initialPage=staffPage==='monitoring'?'monitoring':view==='profile'?'staffProfile':'overview';view='admin';management=createManagement({root:$('#content'),role,userId:session.user.id,request,notice,accountControls:areaControls,enableCoach,initialPage,renderProfile:mountProfile,profileState:()=>profileEditor,saveProfile:async name=>{await request('/rest/v1/atlas_profiles?user_id=eq.'+session.user.id,{method:'PATCH',body:JSON.stringify({name})});profile={...profile,name};}});await management.load();}
- else{if(view==='admin')view='today';const own='&user_id=eq.'+encodeURIComponent(session.user.id);const data=await Promise.all(['/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id','/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id','/rest/v1/atlas_session_comments?select=*&order=created_at,id'].map(path=>readRows(request,path+own)));[plans,records,comments]=data;plans.sort((a,b)=>(a.state==='archived')-(b.state==='archived'));plans=plans.map(p=>({...p,sessions:p.atlas_sessions.sort((a,b)=>a.date.localeCompare(b.date))}));if(!plans.some(p=>p.id===active))active=plans[0]?.id;}
- if(expected!==sessionVersion)throw changedSession();
- loading=false;
- loaded=true;notice(admin?(role==='admin'?'Área do admin dono.':'Área do treinador.'):'Dados sincronizados.');render();
- }catch(e){if(e.code==='local_session_changed')return;loading=false;loaded=false;management?.destroy();management=null;plans=[];records=[];comments=[];if(expiredAccess(e)){await endPrivateView('expired',true);return;}loadError=e.message;notice('Não foi possível carregar os dados. '+e.message);render();}finally{$('#sync').disabled=false;}}
+async function load(preferred,staffPage,rememberArea=false){
+ if(loading||activityBlocksNavigation())return false;
+ if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de sincronizar.');return false;}
+ profileEditor.detach();notificationSettings.detach();loaded=false;loading=true;loadError='';management?.destroy();management=null;plans=[];records=[];comments=[];
+ const expected=sessionVersion,userId=session?.user?.id;
+ $('#planContext').hidden=true;$('#athleteHeading').hidden=true;$('nav[aria-label="Seções"]').hidden=true;
+ $('#content').setAttribute('aria-busy','true');$('#content').innerHTML='<div class="app-loading" role="status"><span class="app-loading-mark" aria-hidden="true"></span><div><strong>Carregando sua área…</strong><p>Conferindo o acesso e atualizando seus dados.</p></div></div>';
+ notice('Atualizando dados…');profileStateChanged();
+ try{
+  if(!userId){render();return false;}
+  // Profile repair already returns the complete own profile. Capabilities remain
+  // a fresh server read on every load; neither response is used before both finish.
+  const [ownProfile,access]=await Promise.all([post('/rest/v1/rpc/atlas_ensure_profile',{}),post('/rest/v1/rpc/atlas_access_context',{})]);
+  if(ownProfile?.user_id!==userId)throw Error('Seu perfil não está disponível. Tente sincronizar novamente.');
+  profile=ownProfile;accessState=accountAreas({...access,preferred_area:profile.preferred_area||access.preferred_area},preferred);role=accessState.selected;admin=role!=='athlete';
+  // Remember navigation only after the server has allowed the requested area.
+  // Await its confirmation together with the data, so failure is never success.
+  const saving=rememberArea&&role===preferred?request('/rest/v1/atlas_profiles?user_id=eq.'+encodeURIComponent(userId),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({preferred_area:role})}).then(rows=>{const saved=rows?.find(row=>row.user_id===userId);if(!saved)throw Error('Não foi possível confirmar a área escolhida. Tente novamente.');return saved;}):null;
+  let data;
+  if(admin){const initialPage=staffPage==='monitoring'?'monitoring':view==='profile'?'staffProfile':'overview';view='admin';management=createManagement({root:$('#content'),role,userId,request,notice,accountControls:areaControls,enableCoach,initialPage,renderProfile:mountProfile,profileState:()=>profileEditor,saveProfile:async name=>{await request('/rest/v1/atlas_profiles?user_id=eq.'+userId,{method:'PATCH',body:JSON.stringify({name})});profile={...profile,name};}});data=management.load();}
+  else{if(view==='admin')view='today';const own='&user_id=eq.'+encodeURIComponent(userId);data=Promise.all(['/rest/v1/atlas_plans?select=*,atlas_sessions(*)&order=created_at.desc,id','/rest/v1/atlas_activity_records?select=*&order=user_id,plan_id,session_id','/rest/v1/atlas_session_comments?select=*&order=created_at,id'].map(path=>readRows(request,path+own)));}
+  const [saved,rows]=await Promise.all([saving,data]);
+  if(expected!==sessionVersion)throw changedSession();
+  if(saved){profile=saved;management?.updateProfile(saved);}
+  if(!admin){[plans,records,comments]=rows;plans.sort((a,b)=>(a.state==='archived')-(b.state==='archived'));plans=plans.map(p=>({...p,sessions:p.atlas_sessions.sort((a,b)=>a.date.localeCompare(b.date))}));if(!plans.some(p=>p.id===active))active=plans[0]?.id;}
+  loading=false;loaded=true;notice(rememberArea&&!accessState.areas.includes(preferred)?'A área solicitada não está disponível. Sua área de atleta foi aberta.':admin?(role==='admin'?'Área do admin dono.':'Área do treinador.'):'Dados sincronizados.');render();return true;
+ }catch(e){
+  if(e.code==='local_session_changed')return false;
+  loading=false;loaded=false;management?.destroy();management=null;plans=[];records=[];comments=[];
+  if(expiredAccess(e)){await endPrivateView('expired',true);return false;}
+  loadError=e.name==='TypeError'?'Verifique sua conexão e tente novamente.':e.name==='AbortError'?'A conexão demorou mais que o esperado. Tente novamente.':e.message;
+  notice('Não foi possível carregar os dados. '+loadError);render();return false;
+ }finally{if(expected===sessionVersion){loading=false;$('#content').removeAttribute('aria-busy');profileStateChanged();}}
+}
 function areaControls(){return `<section class="account-areas"><h3>Áreas da conta</h3><p>Mesmo login e histórico pessoal. Área atual: <strong>${esc(areaLabels[role])}</strong>.</p><div class="actions">${accessState.areas.map(area=>`<button type="button" data-area="${area}" aria-pressed="${area===role}">${area===role?'✓ ':''}${esc(areaLabels[area])}</button>`).join('')}</div>${accessState.coachStatus==='none'?'<p>Você também pode acompanhar atletas como treinador. O dono precisa autorizar os vínculos.</p><button type="button" data-enable-coach>Ativar área de treinador</button>':accessState.coachStatus==='inactive'?'<p>Acesso de treinador desativado pelo dono. Sua área de atleta continua disponível.</p>':''}</section>`;}
-async function enableCoach(){await post('/rest/v1/rpc/atlas_enable_coach',{});await request('/rest/v1/atlas_profiles?user_id=eq.'+encodeURIComponent(session.user.id),{method:'PATCH',body:JSON.stringify({preferred_area:'coach'})});await load('coach');}
-async function switchArea(area,staffPage){if(activityBlocksNavigation()){$('#areaSelect').value=role;return;}if(!session||loading||busy||notificationSettings.busy||profileEditor.busy||management?.busy||!accessState.areas.includes(area)){$('#areaSelect').value=role;return;}if(management?.dirty||profileEditor.dirty){notice(profileEditor.dirty?'Salve ou cancele a edição do perfil antes de trocar de área.':'Salve ou descarte as alterações antes de trocar de área.');$('#areaSelect').value=role;return;}busy=true;$('#areaSelect').disabled=true;try{await request('/rest/v1/atlas_profiles?user_id=eq.'+encodeURIComponent(session.user.id),{method:'PATCH',body:JSON.stringify({preferred_area:area})});await load(area,staffPage);}catch(e){notice('Não foi possível trocar de área. '+e.message);render();}finally{busy=false;profileStateChanged();}}
+async function enableCoach(){await post('/rest/v1/rpc/atlas_enable_coach',{});await load('coach',undefined,true);}
+async function switchArea(area,staffPage){if(activityBlocksNavigation()){$('#areaSelect').value=role;return;}if(!session||loading||busy||notificationSettings.busy||profileEditor.busy||management?.busy||!accessState.areas.includes(area)){$('#areaSelect').value=role;return;}if(management?.dirty||profileEditor.dirty){notice(profileEditor.dirty?'Salve ou cancele a edição do perfil antes de trocar de área.':'Salve ou descarte as alterações antes de trocar de área.');$('#areaSelect').value=role;return;}let opened=false;busy=true;profileStateChanged();try{opened=await load(area,staffPage,true);}finally{busy=false;profileStateChanged();}if(opened){const target=admin?$('#content .management-nav [aria-current="page"]'):$('#viewHeading');if(target){if(!admin)target.tabIndex=-1;target.focus({preventScroll:true});target.scrollIntoView?.({block:'nearest'});}}}
 async function openNotification(target){const expected=sessionVersion;view=target.view;await load(target.area,target.area==='coach'?'monitoring':undefined);if(expected===sessionVersion&&loaded&&!accessState.areas.includes(target.area))notice('Sua área de treinador não está disponível.');}
 const feedback=id=>comments.filter(c=>c.plan_id===active&&c.session_id===id);
 const hasMetric=value=>value!==null&&value!==undefined&&value!=='';
@@ -114,7 +135,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(b.dataset.notificationView){if(loading||busy)return;if(profileEditor.dirty||profileEditor.busy||management?.dirty||management?.busy){notice('Salve ou cancele a edição antes de abrir a atualização.');return;}const target=notificationTarget('/app?view='+encodeURIComponent(b.dataset.notificationView)+'&area='+encodeURIComponent(b.dataset.notificationArea));if(target)await openNotification(target);return;}
  if(!admin&&view==='calendar'&&!loading&&current()&&handleCalendarAction(e,calendarState(),render))return;
  if(loading&&b.dataset.view)return;
- if(b.dataset.area){await switchArea(b.dataset.area);return;}if(b.hasAttribute('data-enable-coach')&&!admin){if(busy||loading||profileEditor.busy)return;if(profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de ativar outra área.');return;}busy=true;b.disabled=true;try{await enableCoach();}catch(error){notice(error.message);}finally{busy=false;render();}return;}
+ if(b.dataset.area){await switchArea(b.dataset.area);return;}if(b.hasAttribute('data-enable-coach')&&!admin){if(busy||loading||profileEditor.busy)return;if(profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de ativar outra área.');return;}busy=true;b.disabled=true;try{await enableCoach();}catch(error){notice(error.message);}finally{busy=false;render();profileStateChanged();}return;}
  if(b.dataset.view){if(notificationSettings.busy||profileEditor.busy||profileEditor.dirty){notice('Salve ou cancele a edição do perfil antes de sair.');return;}view=b.dataset.view;render();}if(b.dataset.close)$('#'+b.dataset.close).close();if(b.dataset.record)openRecord(b.dataset.record);
  if(b.id==='login')$('#account').click();if(b.id==='reload'||b.id==='sync'){if(loading||busy||management?.busy)return;if(management?.dirty){notice('Salve ou descarte as alterações antes de sincronizar.');return;}await load();}
  if(b.id==='demo'){demo=true;profile=null;plans=[{id:'legacy',name:'Plano anterior · referência, prova não confirmada',goal_km:21.1,goal_minutes:150,goal_date:'2026-11-15',guide:window.ATLAS_LEGACY_GUIDE,sessions:window.ATLAS_PLAN.map((s,i)=>({id:'legacy-'+i,date:s.date,type:s.type,km:s.km,description:s.execution,gym:s.gym,notes:s.condition}))}];active='legacy';records=[];comments=[];notice('DEMONSTRAÇÃO — dados temporários em memória, sem sincronização. Prova não confirmada.');render();}
@@ -131,6 +152,7 @@ async function endPrivateView(reason='expired',removeStored=false){
  if(removeStored)keepSession(null);else session=null;
  activityEditor?.reset();profileEditor.discard();profileEditor.detach();avatars.clear();management?.destroy();management=null;
  plans=[];records=[];comments=[];calendars.clear();profile=null;active=null;loaded=false;loading=false;loadError='';
+ $('#content').removeAttribute('aria-busy');
  $('#content').replaceChildren();$('#accountIdentity').hidden=true;$('#accountName').textContent='';$('#accountArea').textContent='';$('#accountInitials').textContent='';$('#accountAvatar').removeAttribute('src');$('#goal').textContent='';$('#notice').textContent='';$('#appMain').hidden=true;
  // Hide and invalidate private state before awaiting browser cleanup. Navigation must
  // not tear down its worker messages, but an unavailable device must not trap logout.

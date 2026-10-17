@@ -12,12 +12,13 @@ async function harness(role = 'admin') {
  const w = new Window({url: 'http://localhost/'}); w.document.write('<div id="content"></div>');
  const doc = parsePlan(model), owner = role === 'admin';
  const people = [{user_id:'owner',name:'Dono',is_admin:true}, {user_id:'coach',name:'Treinadora'}, {user_id:'a',name:'Marina',available_days:[2,4]}, ...(owner ? [{user_id:'b',name:'Rafael'}] : [])];
- let drafts = [], plans = [{...doc, id:'p1', user_id:'a', state:'published', version:1, atlas_sessions:doc.sessions}], failSave = false, failPublish = false, failComment = false;
+ let drafts = [], plans = [{...doc, id:'p1', user_id:'a', state:'published', version:1, atlas_sessions:doc.sessions}], failSave = false, failPublish = false, failComment = false, interceptRequest = null;
  const records=[{user_id:'a',plan_id:'p1',session_id:'sessao-001',status:'adaptado',km:2.5,minutes:21,effort:4,pain:0,recovery:'Normal',notes:'<script>relato privado</script>',updated_at:'2026-10-09T12:00:00Z'}],comments=[];
  const calls = [];
  const coaches=[{user_id:'coach',active:true}];
  const request = async (path, options = {}) => {
   const body = options.body ? JSON.parse(options.body) : null; calls.push({path, body, method: options.method});
+  const intercepted = interceptRequest?.(path, options); if(intercepted)return intercepted;
   if (path.includes('rpc/atlas_list_users')) {let users=people.map(p=>({...p,email:p.user_id+'@example.com',email_confirmed:true,profile_ready:true,coach_status:coaches.find(c=>c.user_id===p.user_id)?.active?'active':coaches.some(c=>c.user_id===p.user_id)?'inactive':'none'}));if(owner&&!people.some(p=>p.user_id==='pending'))users.push({user_id:'pending',name:'Perfil pendente',email:'pending@example.com',profile_ready:false,email_confirmed:true,coach_status:'none'});if(body?.user_filter==='coaches')users=users.filter(p=>p.coach_status!=='none');if(body?.search_text)users=users.filter(p=>(p.name+p.email).includes(body.search_text));return {users,total:users.length};}
   if (path.includes('rpc/atlas_ensure_profile')) {people.push({user_id:body.account,name:'Novo usuário'});return {};}
   if (path.includes('rpc/atlas_save_draft')) {if (failSave) throw Error('Falha de rede'); const old = drafts.find(d => d.id === body.draft_id); const row = {id: old?.id || 'd' + (drafts.length + 1), athlete_id:body.athlete, author_id:owner?'owner':'coach', document:body.document, revision:old ? old.revision + 1 : 1, state:'draft', base_plan_id:body.base_plan}; drafts = drafts.filter(d => d.id !== row.id).concat(row); return structuredClone(row);}
@@ -36,8 +37,64 @@ async function harness(role = 'admin') {
  };
  const portal = createManagement({root:w.document.querySelector('#content'),role,userId:owner?'owner':'coach',request,notice:()=>{},saveProfile:async()=>{}});
  await portal.load(); portal.render();
- return {w,portal,calls,comments,records,get drafts(){return drafts;},get plans(){return plans;},set failSave(value){failSave=value;},set failPublish(value){failPublish=value;},set failComment(value){failComment=value;},async click(selector){const el=w.document.querySelector(selector);assert.ok(el,selector);el.click();await tick();},async input(selector,value){const el=w.document.querySelector(selector);el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));await tick();},async file(){const el=w.document.querySelector('#importFile');Object.defineProperty(el,'files',{configurable:true,value:[new w.File([model],'model.csv')]});el.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();},async submit(selector='#planEditor'){w.document.querySelector(selector).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async close(){portal.destroy();await w.happyDOM.close();}};
+ return {w,portal,calls,comments,records,get drafts(){return drafts;},get plans(){return plans;},set failSave(value){failSave=value;},set failPublish(value){failPublish=value;},set failComment(value){failComment=value;},set intercept(value){interceptRequest=value;},async click(selector){const el=w.document.querySelector(selector);assert.ok(el,selector);el.click();await tick();},async input(selector,value){const el=w.document.querySelector(selector);el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));await tick();},async file(){const el=w.document.querySelector('#importFile');Object.defineProperty(el,'files',{configurable:true,value:[new w.File([model],'model.csv')]});el.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();},async submit(selector='#planEditor'){w.document.querySelector(selector).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async close(){portal.destroy();await w.happyDOM.close();}};
 }
+
+function controlledLoad(h) {
+ const pending = new Map();
+ h.intercept = path => new Promise((resolve,reject)=>pending.set(path,{resolve,reject}));
+ const loading = h.portal.load();
+ const response = path => path.includes('rpc/atlas_list_users')
+  ? {users:[{user_id:'replacement',name:'Nova leitura',email:'new@example.com',profile_ready:true,email_confirmed:true,coach_status:'none'}],total:1}
+  : path.includes('atlas_profiles') ? [{user_id:'replacement',name:'Nova leitura'}] : [];
+ return {loading,pending,release(){for(const [path,read] of pending)read.resolve(response(path));},response};
+}
+
+test('owner roster loads concurrently with paged workspace reads and appears only after all succeed',async()=>{
+ const h=await harness(),d=h.w.document,root=d.querySelector('#content');let reads;
+ try {
+  const before=root.textContent,callStart=h.calls.length;
+  reads=controlledLoad(h);
+  assert.equal(reads.pending.size,9,'the roster starts before any of the eight table reads finishes');
+  const calls=h.calls.slice(callStart),roster=calls.find(c=>c.path.includes('rpc/atlas_list_users'));
+  assert.deepEqual(roster.body,{search_text:'',user_filter:'all',page_offset:0,page_size:25});
+  for(const call of calls.filter(c=>!c.path.includes('/rpc/')))assert.match(call.path,/limit=500&offset=0$/);
+  reads.pending.get(roster.path).resolve(reads.response(roster.path));await tick();
+  h.portal.render();assert.equal(root.textContent,before,'a fast roster response cannot commit a partial workspace');
+  reads.release();await reads.loading;h.portal.render();
+  assert.equal(d.querySelectorAll('.management-nav [aria-current="page"]').length,1);
+  assert.equal(d.querySelector('.management-nav [aria-current="page"]').dataset.page,'overview');
+  await h.click('[data-page=team]');assert.match(root.textContent,/new@example.com/);assert.ok(!root.textContent.includes('pending@example.com'));
+  assert.equal(d.querySelector('.management-nav [aria-current="page"]').dataset.page,'team');
+ }finally{reads?.release();await h.close();}
+});
+
+test('failed roster or table refresh leaves all previously loaded management data intact',async()=>{
+ for(const failure of ['rpc/atlas_list_users','atlas_activity_records']) {
+  const h=await harness(),d=h.w.document,root=d.querySelector('#content');let reads;
+  try {
+   const before=root.textContent;reads=controlledLoad(h);
+   const rejected=assert.rejects(reads.loading,/Falha planejada/);
+   for(const [path,read] of reads.pending)if(!path.includes(failure))read.resolve(reads.response(path));
+   await tick();h.portal.render();assert.equal(root.textContent,before);
+   [...reads.pending].find(([path])=>path.includes(failure))[1].reject(Error('Falha planejada'));
+   await rejected;h.portal.render();assert.equal(root.textContent,before);
+   await h.click('[data-page=team]');assert.match(root.textContent,/pending@example.com/);assert.ok(!root.textContent.includes('new@example.com'));
+   await h.click('[data-page=athletes]');assert.match(root.textContent,/Marina/);assert.ok(!root.textContent.includes('Nova leitura'));
+  }finally{reads?.release();await h.close();}
+ }
+});
+
+test('a completed load cannot restore a destroyed management workspace or attach new listeners',async()=>{
+ const h=await harness(),root=h.w.document.querySelector('#content');let reads;
+ try {
+  reads=controlledLoad(h);assert.equal(reads.pending.size,9);
+  h.portal.destroy();root.replaceChildren();reads.release();await reads.loading;h.portal.render();
+  assert.equal(root.textContent,'');assert.equal(h.portal.busy,false);assert.equal(h.portal.dirty,false);
+  root.innerHTML='<button data-page="team">Área seguinte</button>';root.querySelector('button').click();await tick();
+  assert.equal(root.textContent,'Área seguinte');
+ }finally{reads?.release();await h.close();}
+});
 
 test('management import requires athlete, saves draft, reviews entire content and publishes saved revision', async () => {
  const h = await harness(), d = h.w.document;
@@ -56,6 +113,7 @@ test('management import requires athlete, saves draft, reviews entire content an
 test('coach navigation is scoped; revision, duplicate and unsaved navigation protect historical plan', async () => {
  const h = await harness('coach'), d = h.w.document;
  try {
+  assert.equal(h.calls.some(c=>c.path.includes('rpc/atlas_list_users')),false);
   assert.equal(d.querySelector('[data-page=team]'),null); await h.click('[data-page=athletes]'); assert.match(d.querySelector('#athleteResults').textContent,/Marina/); assert.ok(!d.querySelector('#athleteResults').textContent.includes('Rafael'));
   await h.click('[data-athlete=a]'); await h.click('[data-plan=p1]'); await h.click('[data-revise=p1]'); assert.match(d.querySelector('#content').textContent,/versão publicada continua disponível/);
   await h.input('[data-field=name]','Revisão 2'); await h.click('[data-page=plans]'); assert.match(d.querySelector('#managementDialog').textContent,/Descartar alterações/); await h.click('[data-dismiss]'); assert.equal(d.querySelector('[data-field=name]').value,'Revisão 2');
@@ -83,8 +141,8 @@ test('coach calendar uses linked plans only, keeps multiple sessions and opens r
   h.plans.push({...structuredClone(h.plans[0]),id:'outsider',user_id:'b',name:'Plano sem vínculo'});
   await h.portal.load();h.portal.render();await h.click('[data-page=plans]');
   assert.equal(d.querySelectorAll('[data-calendar-plan]').length,1);assert.ok(!d.querySelector('#content').textContent.includes('Plano pessoal privado'));assert.ok(!d.querySelector('#content').textContent.includes('Plano sem vínculo'));
-  await h.click('[data-calendar-plan=p1]');assert.equal(d.querySelectorAll('.calendar-day-detail .card').length,2);assert.equal(d.querySelectorAll('[data-record]').length,0);assert.equal(d.querySelectorAll('.calendar-status.done').length,1);
-  await h.click('[data-cal-filter=done]');assert.equal(d.querySelectorAll('[data-calendar-inspect]').length,1);await h.click('[data-calendar-inspect]');assert.match(d.querySelector('#content').textContent,/somente leitura/);assert.ok(!d.querySelector('#content script'));
+  await h.click('[data-calendar-plan=p1]');assert.equal(d.querySelectorAll('.calendar-day-detail .card').length,2);assert.equal(d.querySelectorAll('[data-record]').length,0);assert.equal(d.querySelectorAll('.calendar-status.done').length,1);assert.equal(d.querySelector('.management-nav [aria-current="page"]').dataset.page,'plans');
+  await h.click('[data-cal-filter=done]');assert.equal(d.querySelectorAll('[data-calendar-inspect]').length,1);await h.click('[data-calendar-inspect]');assert.match(d.querySelector('#content').textContent,/somente leitura/);assert.ok(!d.querySelector('#content script'));assert.equal(d.querySelectorAll('.management-nav [aria-current="page"]').length,1);assert.equal(d.querySelector('.management-nav [aria-current="page"]').dataset.page,'plans');
   await h.input('#commentForm textarea','Observação pelo calendário');await h.submit('#commentForm');await h.click('[data-page=calendar]');assert.match(d.querySelector('[data-calendar-inspect]').textContent,/\(1\)/);assert.equal(d.querySelector('[data-cal-filter=done]').getAttribute('aria-pressed'),'true');assert.equal(h.records[0].status,'adaptado');
  }finally{await h.close();}
 });
