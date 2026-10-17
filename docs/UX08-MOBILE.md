@@ -45,9 +45,14 @@ O principal ganho vem da redução de dependências, não de reutilizar dados pr
 - Gestão: lista do dono concorrente/atômica, dados anteriores preservados após erro de refresh e resposta descartada após `destroy`. Paginação de 500 e teste existente de 1.001 linhas preservados.
 - Navegador com dados fictícios em 320, 390, 768 e 1280 px, sem rolagem horizontal nos cenários conferidos; conexão lenta, falha/retomada e foco após trocar de área. Seletor mobile conferido em 16 px; botão Atualizar dados em 46 × 48 px.
 - Build explícito com 72 arquivos públicos; `diff --check` sem erros. Nenhuma migration, alteração de política, credencial, vínculo, prescrição ou registro real nesta sprint.
+- Contrato remoto conferido sob o papel autenticado em transação revertida: a regularização devolve o perfil próprio completo, incluindo preferência e caminho do avatar, e o contexto mantém áreas e situação do treinador. Nenhuma escrita de teste persistiu.
 
 Evidências locais ignoradas: `.artifacts/ux08-before.json`, `.artifacts/ux08-after.json`, `.artifacts/ux08-tests.tap`, `.artifacts/ux08-loading-390.png`. A prévia local em `127.0.0.1:4175` usa apenas fixtures e permissão simulada; não entrega push real.
 
 ## Publicação
 
-Publicar pela branch `main`, após preview e revisão do diff. Conferir os arquivos app/gestão publicados e o endpoint de configuração existente, preservando funções e agendamento da UX-07. Registrar commit/deploy verificados após a publicação. Próxima: UX-09, evolução do atleta.
+Publicada pela branch `main`, após revisão e preview aprovado do [PR #2](https://github.com/jovemfelpitos/atlas-21k/pull/2). Commit publicado: `b08bfcc23d2830722112e340eacc2280946adc76`; deploy Netlify `6ad2c7084f1436fe0fa0d303`, estado `ready`, publicado em 16/10/2026 às 21:56 BRT (17/10 às 00:56 UTC). Verificação de produção concluída em 17/10/2026.
+
+`/app.js`, `/app.css` e `/management.js` responderam HTTP 200 e correspondem às fontes testadas, normalizando apenas finais de linha. `/entrar` respondeu HTTP 200. `/api/notification-config` permanece habilitado, com a mesma chave pública anterior. As funções `notification-config` e `notification-dispatch` e o agendamento de cinco minutos permanecem presentes. Evidência local: `.artifacts/ux08-production-checks.json`.
+
+A conferência pública não substitui um teste autenticado em aparelho físico. O aceite dos alertas em Android/iPhone continua pendente. Próxima sprint: UX-09, evolução do atleta.
