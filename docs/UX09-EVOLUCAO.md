@@ -25,9 +25,15 @@ O Acompanhamento da gestão mantém seu resumo existente. Autorização, consult
 - Pace ponderado por distância, virada de segundos, soma semanal acima dos limites de uma atividade, valores incompletos/zero, duração de força, relato não feito com números conservados, atividade futura já relatada e semana sem sessões.
 - Virada de ano, semanas sem sessões entre seleções, fallback após mudança dos dados, isolamento por conta/plano/versão, comentários sem relato e conteúdo autoral escapado.
 - Troca de semana sem requisições, foco após seleção/setas, seleção preservada após salvar/voltar, proteção de relato não salvo e seleção independente em plano arquivado. Suítes existentes de permissões, gestão, notificações e registro também aprovadas.
-- Navegador local com dados fictícios em 320, 390, 768 e 1280 px, sem rolagem horizontal nos cenários conferidos; seletor com fonte de 16 px e setas com área de 46 × 48 px. Semana futura, retorno à atual e edição/salvamento pelo histórico conferidos. Isto não substitui um teste em Android/iPhone físicos.
+- Navegador local com dados fictícios em 320, 390, 768 e 1280 px, sem rolagem horizontal nos cenários conferidos; seletor com fonte de 16 px e setas com área de 46 × 48 px. Semana futura, retorno à atual e edição/salvamento pelo histórico conferidos. Evidência visual local: `.artifacts/ux09-evolucao-mobile.png`. Isto não substitui um teste em Android/iPhone físicos.
 - `npm run build`: **74 arquivos públicos**, incluindo apenas os dois novos arquivos de execução. `git diff --check` sem erros de conteúdo. Nenhuma dependência adicionada.
 
 ## Publicação
 
-Implementação pronta para preview pela integração Git existente. Registrar PR, commit/deploy e conferência pública após publicação. O aceite físico dos alertas da UX-07 continua pendente. Próxima sprint: **UX-10 — treinador no celular**.
+Publicada em **17/10/2026 às 07:48 BRT** (10:48 UTC), pela integração Git da branch `main`, após aprovação técnica do preview. [PR #3](https://github.com/jovemfelpitos/atlas-21k/pull/3) integrado; commit publicado `f72276d20a4a64ec095bb83c0d7fc7125c602e02`, deploy `6ad3525c307d004ba288e145`, estado `ready` e contexto `production`.
+
+Preview `6ad352175e730a2977475469` conferido no commit de implementação `2bd55ae962324e972932a7d36a48401e99a95aff`, com CI de publicação aprovado. Os módulos app, evolução, registro e acompanhamento e a folha da Evolução responderam HTTP 200 e correspondem às fontes testadas. O HTML também confere após retirar apenas as adições exatas do provedor observadas: marcador do preview e comentário/script público do Netlify em produção, além de normalizar finais de linha. `/entrar` respondeu HTTP 200.
+
+Configuração pública de alertas habilitada em produção com a mesma chave pública anterior; preview permanece desabilitado por não receber credenciais de produção. As funções `notification-config`/`notification-dispatch` e seu agendamento `*/5 * * * *` permanecem presentes. Evidências locais: `.artifacts/ux09-preview-checks.json` e `.artifacts/ux09-production-checks.json`.
+
+A conferência pública dos arquivos não substitui o uso autenticado em aparelho físico; os fluxos de dados foram exercitados com fixtures. O aceite físico dos alertas da UX-07 continua pendente. Próxima sprint: **UX-10 — treinador no celular**.
