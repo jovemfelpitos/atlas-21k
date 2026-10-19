@@ -1,6 +1,6 @@
 # Atlas Run
 
-UX-10 implementada em 19/10/2026: gestão adaptada ao celular, navegação visível, acompanhamento direto do atleta, sessões em páginas locais com totais completos, atalhos de comentário e edição/revisão mais compactas. 147/147 testes aprovados; build de 74 arquivos públicos; sem alteração de banco, permissões ou alertas. Critérios e limites em [docs/UX10-TREINADOR-MOBILE.md](docs/UX10-TREINADOR-MOBILE.md). Próxima: UX-11, corrida + musculação.
+UX-10 publicada e conferida em produção em 19/10/2026: gestão adaptada ao celular, navegação visível, acompanhamento direto do atleta, sessões em páginas locais com totais completos, atalhos de comentário e edição/revisão mais compactas. 147/147 testes aprovados; build de 74 arquivos públicos; sem alteração de banco, permissões ou alertas. Critérios e limites em [docs/UX10-TREINADOR-MOBILE.md](docs/UX10-TREINADOR-MOBILE.md). Próxima: UX-11, corrida + musculação.
 
 UX-09 publicada e conferida em produção em 17/10/2026: Evolução por semana com previsto/realizado, distância, duração e pace ponderado, cobertura dos valores e relatos/comentários da semana. Mantém vazio distinto de zero, versões isoladas e proteção do registro. 143/143 testes aprovados; build de 74 arquivos públicos; nenhuma migration ou escrita real. Detalhes e validação em [docs/UX09-EVOLUCAO.md](docs/UX09-EVOLUCAO.md). Próxima: UX-10, treinador no celular.
 

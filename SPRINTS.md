@@ -2,7 +2,7 @@
 
 ## Ciclo aprovado em 16/10/2026
 
-UX-10 implementada em 19/10/2026: treinador no celular, com navegação/atalhos, acompanhamento paginado e editor/revisão compactos, preservando vínculos e versões. 147 testes aprovados; escopo e evidências em [docs/UX10-TREINADOR-MOBILE.md](docs/UX10-TREINADOR-MOBILE.md). Próxima: UX-11, corrida + musculação.
+UX-10 publicada e conferida em produção em 19/10/2026: treinador no celular, com navegação/atalhos, acompanhamento paginado e editor/revisão compactos, preservando vínculos e versões. 147 testes aprovados; escopo e evidências em [docs/UX10-TREINADOR-MOBILE.md](docs/UX10-TREINADOR-MOBILE.md). Próxima: UX-11, corrida + musculação.
 
 UX-09 publicada e conferida em produção em 17/10/2026: seleção semanal, comparações previstas/realizadas, pace com pares válidos, histórico compacto e exportação existente. 143 testes aprovados, sem alteração de banco/permissões; critérios e limites em [docs/UX09-EVOLUCAO.md](docs/UX09-EVOLUCAO.md). Próxima: UX-10, treinador no celular.
 

@@ -34,4 +34,10 @@ Evidências locais ignoradas: `.artifacts/ux10-tests.tap`, `.artifacts/ux10-layo
 
 ## Publicação
 
-Implementação pronta para preview pela integração Git existente. Registrar PR, commit/deploy e conferência pública após publicação. Próxima sprint: **UX-11 — corrida + musculação**.
+Publicada em **19/10/2026 às 09:36 BRT** (12:36 UTC), pela integração Git existente da branch `main`. [PR #4](https://github.com/jovemfelpitos/atlas-21k/pull/4) integrado após o preview aprovado. Commit de produção `11392256b82e4e6f48d26cc6253fe9b6669f3924`; deploy `6ad60ea4fe2ce9457ce8327f`, estado `ready`, contexto `production`.
+
+Preview `6ad60e59fc06b51989fb0803` conferido no commit de implementação `3377e70c0b6664e8bfa947290c39ac1b68af0223`, com status CI de publicação aprovado. Em preview e produção, `management.js`, `management.css`, `app.js`, `app.css`, `progress.js`, `progress.css` e `monitoring.js` responderam HTTP 200 e correspondem às fontes testadas, normalizando somente finais de linha. `/entrar` respondeu HTTP 200.
+
+Configuração pública dos alertas permanece habilitada em produção, com a mesma chave pública conferida imediatamente antes desta publicação. Preview permanece desabilitado. Funções `notification-config`/`notification-dispatch` e agendamento `*/5 * * * *` presentes. Nenhuma inscrição ou mensagem de teste real criada.
+
+Evidências locais: `.artifacts/ux10-preview-checks.json` e `.artifacts/ux10-production-checks.json`. A conferência dos arquivos públicos não substitui o uso autenticado em aparelho físico. Próxima sprint: **UX-11 — corrida + musculação**.
