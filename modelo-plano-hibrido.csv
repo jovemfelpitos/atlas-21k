@@ -1,0 +1,5 @@
+registro,nome,meta_km,meta_min,data_meta,id,data,tipo,km,duracao_min,intensidade,descricao,musculacao,observacoes,tema,orientacao,musculacao_json
+plano,Exemplo híbrido — não é prescrição,,,,,,,,,,,,,,,
+treino,,,,,corrida-001,2026-10-19,Corrida,,,,Exemplo de sessão de corrida; substituir pelo plano revisado.,,,,,
+treino,,,,,forca-001,2026-10-19,Musculação,,,,Exemplo de estrutura; definir os exercícios com o treinador.,,,,,"[{""id"": ""ex-1"", ""name"": ""Exercício definido pelo treinador"", ""sets"": 1, ""reps"": null, ""load_kg"": null, ""notes"": ""Exemplo de formato; revisar antes de publicar.""}]"
+guia,,,,,,,,,,,,,,Modelo híbrido,Sessões separadas preservam a duração e o pace da corrida.,

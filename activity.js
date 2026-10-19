@@ -1,3 +1,4 @@
+import {validateStrengthResults,canonicalStrength,createStrengthResults} from './strength.js';
 import {escapeHTML as esc,displayDate,amount,sessionKey,paceLabel} from './monitoring.js';
 
 const fields=['status','km','minutes','effort','pain','recovery','notes'];
@@ -7,7 +8,7 @@ const recoveryOptions=['','Normal','Pernas pesadas','Dor persistente'];
 const fieldError=(field,message)=>Object.assign(Error(message),{field});
 const valuesOf=form=>Object.fromEntries(fields.map(key=>[key,form.elements[key].value]));
 const numeric=value=>value==null?null:Number(value);
-const sameValues=(a,b)=>fields.every(key=>numbers.includes(key)?numeric(a[key])===numeric(b[key]):(a[key]??'')===(b[key]??''));
+const sameValues=(a,b)=>(!Object.hasOwn(b,'strength')||canonicalStrength(a.strength)===canonicalStrength(b.strength))&&fields.every(key=>numbers.includes(key)?numeric(a[key])===numeric(b[key]):(a[key]??'')===(b[key]??''));
 const conflict=()=>Error('O registro mudou em outra aba ou dispositivo. Seus campos foram mantidos. Feche, sincronize e confira a versão atual antes de editar novamente.');
 
 export function validateActivity(values) {
@@ -21,6 +22,7 @@ export function validateActivity(values) {
   if(!/^\d*(?:[.,]\d+)?$/.test(text)||!Number.isFinite(value)||value<0||value>max||(key==='effort'||key==='pain')&&!Number.isInteger(value))throw fieldError(key,`${label}: informe ${max===10?'um número inteiro de 0 a 10':'um valor de 0 a '+max}, ou deixe em branco.`);
   result[key]=value;
  }
+ if(Object.hasOwn(values,'strength')){try{result.strength=validateStrengthResults(values.strength);}catch(error){throw Object.assign(fieldError('strength',error.message),{exerciseIndex:error.exerciseIndex,setIndex:error.setIndex,metric:error.metric});}}
  return result;
 }
 
@@ -83,11 +85,11 @@ const formHTML=()=>`<form id="recordForm" novalidate>
  <div class="activity-scroll"><div id="recordContext" class="activity-context"></div><input name="session_id" type="hidden">
  <p id="activityStatusLabel" class="activity-label">Como foi o treino? <small>Obrigatório</small></p><select id="activityStatus" name="status" required hidden aria-describedby="activityStatusHelp activityStatusError"><option value="">Selecione a situação</option><option value="feito">Feito</option><option value="adaptado">Adaptado</option><option value="não feito">Não feito</option></select><div id="activityStatusButtons" class="activity-status-buttons" role="group" aria-labelledby="activityStatusLabel" aria-describedby="activityStatusHelp activityStatusError"><button type="button" data-activity-status="feito" aria-pressed="false"><span aria-hidden="true">✓</span> Feito</button><button type="button" data-activity-status="adaptado" aria-pressed="false">Adaptado</button><button type="button" data-activity-status="não feito" aria-pressed="false">Não feito</button></div><p id="activityStatusError" class="activity-field-error" role="alert"></p><p id="activityStatusHelp" class="activity-help" aria-live="polite"></p>
  <div id="activitySkipped" class="activity-skipped" hidden><p>Você pode salvar só a situação e um motivo opcional. Os valores preenchidos foram mantidos.</p><button type="button" id="activityShowResults" aria-controls="activityMetrics" aria-expanded="false">Revisar valores e sensações</button></div>
- <div id="activityMetrics">
+ <div id="activityMetrics"><section id="activityStrength" hidden></section>
  <section class="activity-section activity-measurements" aria-labelledby="activityResults"><h3 id="activityResults" class="activity-sr-only">O que você realizou</h3>
- <div class="activity-label-row"><label for="activityKm">Distância realizada</label><button type="button" class="activity-clear" data-activity-clear="km" aria-label="Limpar distância">Limpar</button></div><div class="activity-distance-stepper"><button type="button" data-distance-step="-1" aria-label="Diminuir 100 metros">−</button><div class="activity-distance-input"><input id="activityKm" name="km" type="text" inputmode="decimal" maxlength="30" placeholder="—" aria-describedby="activityDecimalHelp activityKmError"><span>km</span></div><button type="button" data-distance-step="1" aria-label="Aumentar 100 metros">+</button></div><p id="activityKmError" class="activity-field-error" role="alert"></p><p id="activityDecimalHelp" class="activity-help">Ajuste de 100 m ou toque no número para digitar. Opcional.</p>
+ <div id="activityDistance"><div class="activity-label-row"><label for="activityKm">Distância realizada</label><button type="button" class="activity-clear" data-activity-clear="km" aria-label="Limpar distância">Limpar</button></div><div class="activity-distance-stepper"><button type="button" data-distance-step="-1" aria-label="Diminuir 100 metros">−</button><div class="activity-distance-input"><input id="activityKm" name="km" type="text" inputmode="decimal" maxlength="30" placeholder="—" aria-describedby="activityDecimalHelp activityKmError"><span>km</span></div><button type="button" data-distance-step="1" aria-label="Aumentar 100 metros">+</button></div><p id="activityKmError" class="activity-field-error" role="alert"></p><p id="activityDecimalHelp" class="activity-help">Ajuste de 100 m ou toque no número para digitar. Opcional.</p></div>
  <div class="activity-label-row"><p id="activityDurationLabel" class="activity-label">Duração realizada</p><button type="button" class="activity-clear" data-activity-clear="minutes" aria-label="Limpar duração">Limpar</button></div><input id="activityMinutes" name="minutes" type="hidden"><div id="activityDuration" class="activity-duration" role="group" aria-labelledby="activityDurationLabel" aria-describedby="activityMinutesError"><label for="activityHours">Horas<select id="activityHours" name="durationHours">${durationOptions(24)}</select></label><label for="activityDurationMinutes">Minutos<select id="activityDurationMinutes" name="durationMinutes">${durationOptions(59)}</select></label><label for="activitySeconds">Segundos<select id="activitySeconds" name="durationSeconds">${durationOptions(59)}</select></label></div><p id="activityMinutesError" class="activity-field-error" role="alert"></p><p id="activityDurationHelp" class="activity-help">Opcional. Em branco é diferente de zero.</p>
- <div class="activity-pace"><div><span>Pace médio</span><output id="activityPace" aria-live="polite">—</output></div><p id="activityPaceHelp">Informe distância e duração.</p></div></section>
+ <div id="activityPacePanel" class="activity-pace"><div><span>Pace médio</span><output id="activityPace" aria-live="polite">—</output></div><p id="activityPaceHelp">Informe distância e duração.</p></div></section>
  <details id="activityFeelings" class="activity-feelings"><summary>Esforço, dor e recuperação <span>Opcional</span></summary><div class="activity-feelings-body">
  <section class="activity-section" aria-labelledby="effortLabel"><label id="effortLabel" for="activityEffort">Esforço percebido · 0 a 10</label><p id="effortHelp" class="activity-help">Quanto esforço o treino exigiu de você? Pense na atividade como um todo.</p><select id="activityEffort" name="effort" aria-describedby="effortHelp effortValue activityEffortError">${scaleOptions('effort')}</select><p id="activityEffortError" class="activity-field-error" role="alert"></p><p id="effortValue" class="activity-scale-value" aria-live="polite"></p>
  <details><summary>Entenda a escala de esforço</summary><p>0 indica nenhum esforço; 10, seu esforço máximo. Como referência, 5–6 representam esforço moderado e 7–8, intenso. Considere sua própria sensação.</p><p>Em esforço moderado, costuma ser possível conversar; em esforço intenso, falar frases fica mais difícil.</p><a href="https://www.cdc.gov/physical-activity-basics/measuring/" target="_blank" rel="noopener noreferrer">Referência de intensidade · CDC</a></details></section>
@@ -103,9 +105,10 @@ const formHTML=()=>`<form id="recordForm" novalidate>
 export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}) {
  dialog.innerHTML=formHTML();
  const form=dialog.querySelector('form'),get=id=>dialog.querySelector('#'+id);
- let context=null,baseline='',busy=false,version=0,reviewSkipped=false,viewportBound=false;
+ let context=null,baseline='',busy=false,version=0,reviewSkipped=false,viewportBound=false,strengthResults=null;
+ const currentValues=()=>({...valuesOf(form),...(strengthResults?{strength:strengthResults.read()}:{} )});
  const setText=(id,value)=>{if(get(id).textContent!==value)get(id).textContent=value;};
- const dirty=()=>!!context&&JSON.stringify(valuesOf(form))!==baseline;
+ const dirty=()=>!!context&&JSON.stringify(currentValues())!==baseline;
  const focusStatus=()=>{const buttons=get('activityStatusButtons');(buttons.querySelector('[aria-pressed="true"]')||buttons.querySelector('button')).focus();};
  const fieldErrors={status:'activityStatusError',km:'activityKmError',minutes:'activityMinutesError',effort:'activityEffortError',pain:'activityPainError',notes:'activityNotesError'};
  const resetErrors=()=>{get('saveError').textContent='';form.querySelectorAll('[aria-invalid]').forEach(el=>el.removeAttribute('aria-invalid'));Object.values(fieldErrors).forEach(id=>get(id).textContent='');};
@@ -143,7 +146,7 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
   onState();
  }
  function close(){if(busy)return false;if(dirty()){get('activityDiscard').hidden=false;get('keepActivity').focus();return false;}finish();return true;}
- function finish(){version++;context=null;baseline='';unbindViewport();dialog.close();get('activityDiscard').hidden=true;form.reset();form.elements.minutes.value='';reviewSkipped=false;onState();}
+ function finish(){version++;context=null;baseline='';strengthResults?.destroy();strengthResults=null;unbindViewport();dialog.close();get('activityDiscard').hidden=true;form.reset();form.elements.minutes.value='';reviewSkipped=false;onState();}
  function reset(){finish();busy=false;form.elements.session_id.value='';form.elements.recovery.innerHTML=recoveryOptions.map(value=>`<option value="${esc(value)}">${esc(value||'Ainda não avaliei')}</option>`).join('');get('recordContext').replaceChildren();get('recordTitle').textContent='Registrar atividade';resetErrors();get('activitySaveState').textContent='';get('effortValue').textContent='';get('painValue').textContent='';get('activityStatusHelp').textContent='';form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);form.removeAttribute('aria-busy');form.querySelector('[type=submit]').textContent='Salvar atividade';onState();}
  dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
  dialog.addEventListener('click',event=>{
@@ -162,11 +165,11 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
  form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy||!context)return;
   resetErrors();get('activityDiscard').hidden=true;
-  let values;try{values=validateActivity(valuesOf(form));}catch(error){get('saveError').textContent=error.message;if(fieldErrors[error.field])get(fieldErrors[error.field]).textContent=error.message;const field=form.elements[error.field];field?.setAttribute('aria-invalid','true');if(error.field==='status'){get('activityStatusButtons').setAttribute('aria-invalid','true');focusStatus();}else{reviewSkipped=true;get('activityMetrics').hidden=false;if(['effort','pain'].includes(error.field))get('activityFeelings').open=true;if(error.field==='minutes'){get('activityDuration').setAttribute('aria-invalid','true');get('activityHours').focus();}else field?.focus();}return;}
+  let values;try{values=validateActivity(currentValues());}catch(error){get('saveError').textContent=error.message;if(fieldErrors[error.field])get(fieldErrors[error.field]).textContent=error.message;const field=form.elements[error.field];field?.setAttribute('aria-invalid','true');if(error.field==='status'){get('activityStatusButtons').setAttribute('aria-invalid','true');focusStatus();}else{reviewSkipped=true;get('activityMetrics').hidden=false;if(['effort','pain'].includes(error.field))get('activityFeelings').open=true;if(error.field==='minutes'){get('activityDuration').setAttribute('aria-invalid','true');get('activityHours').focus();}else if(error.field==='strength'){const section=get('activityStrength').querySelector('[data-strength-result="'+(error.exerciseIndex??0)+'"]');if(section){section.open=true;const row=section.querySelectorAll('[data-strength-set]')[error.setIndex??0];const input=row?.querySelector('[data-strength-actual="'+(error.metric||'reps')+'"]');input?.setAttribute('aria-invalid','true');input?.focus();}}else field?.focus();}return;}
   busy=true;form.setAttribute('aria-busy','true');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=true);const submit=form.querySelector('[type=submit]');submit.textContent='Salvando…';get('activitySaveState').textContent='Confirmando o salvamento do seu relato…';onState();
   let saved;const expected=version;
   try{saved=await save(context,values);if(!saved)throw Error('Tente salvar novamente para conferir o registro.');}catch(error){if(expected!==version)return;const detail=error.status===401||error.status===403?'Sua sessão ou acesso mudou. Entre novamente ou sincronize sua conta antes de tentar de novo.':error.status===409?'Já existe um registro para esta sessão. Tente salvar novamente para conferir ou sincronize os dados.':error.status>=500||error.name==='TypeError'||error.name==='AbortError'?'Verifique sua conexão e tente novamente.':error.message;get('saveError').textContent='Não foi possível confirmar o salvamento. Seus campos foram mantidos. '+detail;get('saveError').focus();}
-  finally{if(expected===version){busy=false;form.removeAttribute('aria-busy');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);submit.textContent='Salvar atividade';get('activitySaveState').textContent='';onState();}}
+  finally{if(expected===version){busy=false;form.removeAttribute('aria-busy');form.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=false);submit.textContent='Salvar atividade';get('activitySaveState').textContent='';strengthResults?.refresh();onState();}}
   if(expected!==version)return;
   if(saved){const sessionId=context.session_id;finish();onSaved(saved);window.document.querySelector(`[data-record="${window.CSS.escape(sessionId)}"]`)?.focus({preventScroll:true});}
  });
@@ -178,10 +181,11 @@ export function createActivityEditor({window,dialog,save,onSaved,onState=()=>{}}
    form.elements.recovery.innerHTML=recoveryOptions.map(value=>`<option value="${esc(value)}">${esc(value||'Ainda não avaliei')}</option>`).join('');
    if(record?.recovery&&!recoveryOptions.includes(record.recovery)){const option=window.document.createElement('option');option.value=record.recovery;option.textContent=record.recovery;form.elements.recovery.append(option);}
    for(const key of fields)if(record?.[key]!=null)form.elements[key].value=numbers.includes(key)?storedDecimal(record[key]):String(record[key]);
-   get('recordTitle').textContent=record?'Editar atividade':'Registrar atividade';
+   get('recordTitle').textContent=session.strength?.length?(record?'Editar musculação':'Registrar musculação'):(record?'Editar atividade':'Registrar atividade');
    const prescribed=[session.km!=null&&session.km!==''?amount(session.km,'km'):null,session.minutes!=null&&session.minutes!==''?amount(session.minutes,'min'):null].filter(Boolean);
    get('recordContext').innerHTML=`<strong>${esc(session.type)}</strong><p>${esc(displayDate(session.date))} · ${esc(plan.name)}${plan.version!=null?' · v'+esc(plan.version):''}${plan.state==='archived'?' · histórico':''}</p><details><summary>Ver treino previsto${prescribed.length?' · '+esc(prescribed.join(' · ')):''}</summary>${session.description?'<p class="preserve-lines">'+esc(session.description)+'</p>':''}${session.intensity?'<p>'+esc(session.intensity)+'</p>':''}${session.gym?'<p>Musculação: '+esc(session.gym)+'</p>':''}${session.notes?'<p>Observações: '+esc(session.notes)+'</p>':''}</details>`;
-   showDuration();resetErrors();get('activityDiscard').hidden=true;baseline=JSON.stringify(valuesOf(form));update();if(!dialog.open)dialog.showModal();bindViewport();dialog.querySelector('.activity-scroll').scrollTop=0;focusStatus();
+   strengthResults?.destroy();strengthResults=null;get('activityStrength').replaceChildren();get('activityStrength').hidden=true;if(session.strength?.length)strengthResults=createStrengthResults(get('activityStrength'),session.strength,record?.strength??[],update);get('activityDistance').hidden=!!session.strength?.length;get('activityPacePanel').hidden=!!session.strength?.length;
+   showDuration();resetErrors();get('activityDiscard').hidden=true;baseline=JSON.stringify(currentValues());update();if(!dialog.open)dialog.showModal();bindViewport();dialog.querySelector('.activity-scroll').scrollTop=0;focusStatus();
   },close,reset,get dirty(){return dirty();},get busy(){return busy;},get isOpen(){return !!context;}
  };
 }
