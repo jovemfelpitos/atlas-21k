@@ -1,3 +1,4 @@
+import {strengthPrescriptionHTML,strengthResultsHTML} from '../strength.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
@@ -44,7 +45,7 @@ async function harness({admin=false,coach=false,linked=false,loggedIn=true,withC
  else if(url.includes('atlas_import_plan')){imported++;data='plan-2';}
  return new Response(JSON.stringify(data));};
  const HarnessDate=now?class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return new Date(now).getTime();}}:Date;
- const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,Date:HarnessDate,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,createNotificationSettings:notificationFactory,notificationTarget,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,createProgressState,progressHTML,selectProgressWeek,console,setTimeout,clearTimeout});
+ const context=vm.createContext({window:w,document:w.document,localStorage:w.localStorage,fetch:w.fetch,FormData:w.FormData,Blob:w.Blob,URL:w.URL,URLSearchParams,AbortController,Date:HarnessDate,navigator:w.navigator,parsePlan,createManagement,createCalendarState,calendarHTML,handleCalendarAction,createActivityEditor,persistActivity,createNotificationSettings:notificationFactory,notificationTarget,safeNext,createAvatarStore,createProfileEditor,initials,accountAreas,areaLabels,readRows,monitoringRows,summaryHTML,commentsHTML,createProgressState,progressHTML,selectProgressWeek,strengthPrescriptionHTML,strengthResultsHTML,console,setTimeout,clearTimeout});
  vm.runInContext(source,context);await tick();
  return {w,calls,blobs,revokedURLs,set intercept(value){intercept=value;},get rows(){return rows;},get imported(){return imported;},set fail(v){fail=v;},set coachStatus(value){coachStatus=value;},async click(sel){w.document.querySelector(sel).click();await tick();},async submit(sel){w.document.querySelector(sel).dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();},async area(value){const s=w.document.querySelector('#areaSelect');s.value=value;s.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();}};
 }
@@ -502,5 +503,18 @@ test('progress week and records remain separate for archived versions and switch
   assert.equal(d.querySelector('#progressWeek').value,'2030-01-14');assert.equal(d.querySelectorAll('[data-record]').length,0);
   assert.match(d.querySelector('.progress-actual dd').textContent,/Não informado/);
   await change('#planSelect','plan-1');assert.equal(d.querySelector('#progressWeek').value,'2030-01-21');
+ }finally{await h.w.happyDOM.close();}
+});
+
+test('athlete records each strength set, reopens exact zeros and exports the hybrid plan without credentials',async()=>{
+ const strength=[{id:'ex-1',name:'Exercício de teste',sets:2,reps:10,load_kg:20,notes:'Orientação'}];
+ const h=await harness({calendarSessions:[{id:'run',date:'2030-01-15',type:'Corrida',km:5,minutes:30},{id:'force',date:'2030-01-15',type:'Musculação',minutes:30,strength}],now:'2030-01-15T12:00:00'}),d=h.w.document;
+ try{
+  assert.equal(d.querySelectorAll('.training-session').length,2);assert.match(d.querySelector('.strength-prescription').textContent,/Exercício de teste/);
+  await h.click('[data-record=force]');const form=d.querySelector('#recordForm');assert.equal(d.querySelector('[data-strength-actual=reps]').value,'');assert.equal(d.querySelector('#activityDistance').hidden,true);
+  await h.click('[data-activity-status=adaptado]');for(const field of ['reps','load_kg']){const el=d.querySelector('[data-strength-actual='+field+']');el.value='0';el.dispatchEvent(new h.w.Event('input',{bubbles:true}));}form.elements.minutes.value='30';await h.submit('#recordForm');
+  assert.deepEqual(h.rows[0].strength[0].sets,[{reps:0,load_kg:0},{reps:null,load_kg:null}]);await h.click('[data-record=force]');assert.equal(d.querySelector('[data-strength-actual=reps]').value,'0');await h.click('[data-close=recordDialog]');
+  await h.click('[data-view=progress]');assert.match(d.querySelector('.strength-reported').textContent,/0 rep · 0 kg/);assert.match(d.querySelector('.progress-pace .progress-actual').textContent,/Indisponível/);
+  await h.click('#export');const data=JSON.parse(await h.blobs[0].text());assert.equal(data.plans[0].sessions[1].strength[0].load_kg,20);assert.equal(data.records[0].strength[0].sets[0].load_kg,0);assert.ok(!JSON.stringify(data).includes('access_token'));assert.ok(!JSON.stringify(data).includes('user_id'));
  }finally{await h.w.happyDOM.close();}
 });

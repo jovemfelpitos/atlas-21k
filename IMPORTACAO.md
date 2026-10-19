@@ -12,6 +12,20 @@ Mantenha todas as 16 colunas do modelo. Use exatamente uma linha `registro=plano
 
 Limites: 2 MB por arquivo, 1000 sessões por plano. A prévia exibe todas as sessões, metas e guia. Escolha obrigatoriamente um atleta antes de carregar o arquivo. Confira a prévia em lista ou calendário e edite o conteúdo se necessário. Salve como rascunho e, depois, use Revisar publicação para confirmar o destinatário, todas as sessões e o guia. O atleta só verá o plano após a publicação. Criar revisão de um plano publicado gera uma nova versão e arquiva a anterior, preservando seus registros. Duplicar cria um rascunho independente para um atleta autorizado.
 
+## Corrida e musculação no mesmo plano
+
+O modelo anterior continua válido. Para exercícios estruturados, baixe `modelo-plano-hibrido.csv`: mantém as 16 colunas e acrescenta a coluna opcional `musculacao_json`. Ela contém um array JSON na linha de treino, com aspas escapadas conforme CSV. Exemplo do conteúdo antes do escape CSV:
+
+```json
+[{"id":"ex-1","name":"Exercício definido pelo treinador","sets":3,"reps":10,"load_kg":null,"notes":""}]
+```
+
+O exemplo ilustra o formato, sem recomendar um treino. São permitidos até 30 exercícios por sessão, com IDs únicos, nomes de até 200 caracteres e 1 a 20 séries. Repetições previstas: inteiro de 1 a 1000, ou `null`. Carga: de 0 a 1000 kg, até 3 casas decimais, ou `null`. Orientação opcional: até 1000 caracteres. No JSON, use ponto decimal e números sem aspas.
+
+Use sessões separadas para corrida e musculação, inclusive no mesmo dia; a sessão com exercícios deve ter `km` vazio ou zero. A coluna `musculacao` continua sendo texto livre e não é convertida automaticamente. Também é possível adicionar os exercícios no editor, sem preencher JSON.
+
+Carga significa peso externo total: some os halteres. Zero significa sem carga externa; vazio significa não informado. O atleta registra as repetições e a carga que realizou em cada série; a prescrição não preenche o relato. A duração da musculação entra no tempo total, sem entrar no cálculo do pace da corrida.
+
 ## Prompt para copiar no GPT
 
 Gere um arquivo CSV UTF-8 para importar no Atlas Run, a partir dos dados esportivos que eu fornecer. Não invente histórico, resultados de avaliações, lesões ou datas de provas. Pergunte o que faltar antes de prescrever. Considere meus dias disponíveis sem alterar datas de planos existentes sem minha decisão. Use as colunas exatamente nesta ordem:

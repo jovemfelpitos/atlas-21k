@@ -71,6 +71,16 @@ O atleta vê comentários em **Treino**, **Calendário** e **Evolução**, inclu
 
 UX-02 entregue em 14/10/2026: landing, acesso separado, escolha inicial de área e recuperação. SMTP Brevo próprio ativo, com modelos em português; e-mails reais de confirmação e recuperação entregues e links validados pelo dono, incluindo entrada de nova conta como treinador. O remetente do piloto usa domínio técnico `brevosend.com`. A área inicial de treinador abre sem atletas vinculados e não permite consultar planos/relatos de terceiros. A conta que já tem histórico mantém sua última área ao entrar novamente. A matriz completa entre contas e dispositivos permanece em UX-06.
 
+## Musculação estruturada — UX-11
+
+No editor, crie uma sessão própria para musculação, mesmo que haja corrida no mesmo dia. Deixe a distância vazia ou zero. Em **Musculação estruturada**, use **Adicionar exercício**, informe nome e séries e, se necessário, repetições, carga e orientação. Campos já preenchidos são preservados ao adicionar/remover exercícios e abrir a prévia. A seção **Musculação em texto (legado/opcional)** mantém o conteúdo antigo. O modelo CSV híbrido também pode preencher os exercícios; formato em IMPORTACAO.md.
+
+Salve o rascunho, confira o destinatário e todos os exercícios em **Revisar publicação** e confirme. Alterar uma prescrição publicada cria outra versão; os relatos permanecem na anterior. Remover todos os exercícios no editor é uma remoção explícita no rascunho, sem apagar resultados históricos.
+
+O atleta abre **Registrar atividade** na sessão de musculação e informa repetições e carga por série. As séries previstas começam vazias; **Adicionar série** permite relatar séries extras até o limite de 20 por exercício. A duração é opcional. Feito/Adaptado/Não feito, esforço, dor e observações continuam disponíveis. **Não feito** mantém valores preenchidos, sem somá-los aos resultados realizados. Falha de salvamento mantém os campos para nova tentativa.
+
+Carga é peso externo total em kg; some os halteres. Zero significa sem carga externa, e vazio não informado. A equipe consulta **Séries relatadas** em **Ver relato e comentários**, sem editar a execução do atleta. Corrida e musculação aparecem como sessões distintas no calendário; o tempo conta no total da semana e o pace usa somente pares válidos de distância e duração da corrida. Não há gráfico de tonelagem ou progressão de carga neste ciclo.
+
 ## Ajuda e sessão entre abas
 
 A página [Ajuda](/ajuda) reúne orientações de conta, recuperação, áreas, planos, calendário e registro. No piloto, procure o treinador ou o administrador responsável pelo acesso, informando tela, ação, horário aproximado e dispositivo. Não envie senhas, códigos ou links de acesso.

@@ -1,0 +1,26 @@
+.strength-help{font-size:12px;color:var(--muted);line-height:1.7}
+.strength-prescription,.strength-reported{border:1px solid var(--line);background:var(--color-surface-subtle);padding:12px 16px;margin:16px 0}
+.strength-prescription>summary,.strength-reported>summary{font-size:14px;align-content:center}
+.strength-exercise{padding:12px 0;overflow-wrap:anywhere}
+.strength-exercise+.strength-exercise{border-top:1px solid var(--line)}
+.strength-exercise h4,.strength-result-exercise h4{font-size:15px;margin:0 0 8px;overflow-wrap:anywhere}
+.strength-exercise p{font-size:13px;margin:6px 0}
+.strength-editor{margin:20px 0;border-top:1px solid var(--line);padding-top:16px}
+.strength-editor-exercise{display:block;margin:16px 0;padding:14px;background:var(--color-surface-subtle)}
+.strength-prescription-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.strength-prescription-fields label{font-size:12px}
+.strength-prescription-fields input{padding:10px 6px;font-size:16px;min-height:46px}
+.strength-editor button{border:1px solid var(--line);font-size:13px;min-height:46px}
+.strength-result-exercise{border:1px solid var(--line);border-radius:14px;padding:14px;margin:16px 0;background:var(--color-surface-subtle)}
+.strength-set{display:grid;grid-template-columns:46px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;margin:12px 0}
+.strength-set>span{font-size:12px;color:var(--muted);align-self:end;margin-bottom:14px}
+.strength-set label{font-size:12px;margin:0}
+.strength-set input{font-size:16px;padding:12px 8px;margin-top:4px}
+.strength-result-exercise>button{font-size:12px;border:1px solid var(--line);min-height:44px;width:100%}
+#activityStrength{margin:20px 0}
+#activityStrength>h3{font-size:16px}
+@media(max-width:360px){.strength-prescription-fields{grid-template-columns:minmax(0,1fr)}.strength-result-exercise{padding:10px}.strength-set{grid-template-columns:40px minmax(0,1fr) minmax(0,1fr);gap:6px}}
+
+.strength-result-exercise>summary{font-size:15px;min-height:46px;align-content:center;overflow-wrap:anywhere}
+
+.strength-units{background:transparent;padding:0;margin:8px 0 14px}.strength-units>summary{font-size:12px;min-height:44px;align-content:center}

@@ -31,7 +31,7 @@ for (const layout of ['horizontal', 'vertical']) {
       `release/png/logotipo/atlas-run-${layout}-${color}-1200.png`);
   }
 }
-files.push('tokens.css', 'typography.css', 'brand.css', 'app.css', 'progress.js', 'progress.css', 'notifications.js', 'notifications.css', 'notifications-sw.js', 'manifest.webmanifest',
+files.push('strength.js','strength.css','modelo-plano-hibrido.csv','tokens.css', 'typography.css', 'brand.css', 'app.css', 'progress.js', 'progress.css', 'notifications.js', 'notifications.css', 'notifications-sw.js', 'manifest.webmanifest',
   ...brandFiles.map(name => `assets/brand/v1.0/${name}`),
   'assets/fonts/sora/sora-latin-wght.woff2',
   'assets/fonts/sora/sora-latin-ext-wght.woff2',

@@ -1,3 +1,4 @@
+import {strengthResultsHTML} from './strength.js';
 import {escapeHTML as esc,todayDate,displayDate,amount,weekStart,weeklySummary,summarize,paceLabel,commentsHTML} from './monitoring.js';
 
 const completed=row=>['feito','adaptado'].includes(row.record?.status);
@@ -12,7 +13,7 @@ export function durationLabel(value) {
 // Pair distance and duration within each session before adding. Independent
 // optional totals cannot be divided to obtain a meaningful average pace.
 export function pairedPace(rows,get) {
- const pairs=rows.map(get).filter(v=>paceLabel(v?.km,v?.minutes));
+ const pairs=rows.filter(r=>!r.session?.strength?.length).map(get).filter(v=>paceLabel(v?.km,v?.minutes));
  return {label:paceLabel(pairs.reduce((sum,v)=>sum+Number(v.km),0),pairs.reduce((sum,v)=>sum+Number(v.minutes),0)),informed:pairs.length};
 }
 export function progressData(rows,state,today=todayDate()) {
@@ -35,6 +36,7 @@ function sessionHTML(row,comments) {
  const feeling=record?[record.effort==null?'':'Esforço '+record.effort+'/10',record.pain==null?'':'Dor '+record.pain+'/10',record.recovery||''].filter(Boolean):[];
  return `<article class="progress-session"><div class="progress-session-heading"><div><p class="progress-date">${esc(displayDate(session.date))}</p><h3>${esc(session.type)}</h3></div><span class="progress-status ${done?'done':''}">${done?'<span aria-hidden="true">✓ </span>':''}${esc(row.label)}</span></div>
  ${record?`<p class="progress-session-values">${values.length?esc(values.join(' · ')):'Distância e duração não informadas.'}</p>${!done&&values.length?'<p class="muted">Valores guardados; não entram nos totais realizados.</p>':''}${feeling.length||record.notes?`<details class="progress-report"><summary>Sensações e observações</summary>${feeling.length?'<p>'+esc(feeling.join(' · '))+'</p>':''}${record.notes?'<p class="preserve-lines">'+esc(record.notes)+'</p>':''}</details>`:''}<button type="button" class="progress-edit" data-record="${esc(session.id)}" aria-label="Editar registro de ${esc(session.type)} em ${esc(displayDate(session.date))}">Editar registro</button>`:''}
+ ${record?strengthResultsHTML(session.strength,record.strength):''}
  ${feedback.length?commentsHTML(feedback):''}</article>`;
 }
 export function progressHTML({rows,state,comments=[],today=todayDate()}) {

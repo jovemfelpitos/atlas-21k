@@ -1,3 +1,4 @@
+import {validateStrengthPrescription} from './strength.js';
 const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value)) && new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) === value;
 const text = (value, label, max, required = false) => {
  const result = String(value ?? '').trim();
@@ -24,7 +25,8 @@ export function validatePlanDocument(input) {
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(id) || ids.has(id)) throw Error(`${label}: ID inválido ou repetido (${id}).`);
   ids.add(id);
   if (!validDate(session.date)) throw Error(`${label}: data inválida.`);
-  return {id, date: session.date, type: text(session.type, label + ' · modalidade', 120, true), km: number(session.km, label + ' · distância', 1000), minutes: number(session.minutes, label + ' · duração', 1440), intensity: text(session.intensity, label + ' · intensidade', 500), description: text(session.description, label + ' · descrição', 10000, true), gym: text(session.gym, label + ' · musculação', 3000), notes: text(session.notes, label + ' · observações', 3000)};
+  const strength=validateStrengthPrescription(session.strength??[]);if(strength.length&&number(session.km,label+' · distância',1000)>0)throw Error(label+': separe a corrida e a musculação em duas sessões.');
+  return {id, ...(Object.hasOwn(session,'strength')?{strength}:{}), date: session.date, type: text(session.type, label + ' · modalidade', 120, true), km: number(session.km, label + ' · distância', 1000), minutes: number(session.minutes, label + ' · duração', 1440), intensity: text(session.intensity, label + ' · intensidade', 500), description: text(session.description, label + ' · descrição', 10000, true), gym: text(session.gym, label + ' · musculação', 3000), notes: text(session.notes, label + ' · observações', 3000)};
  });
  const guide = input.guide.map((item, index) => ({tema: text(item.tema, `Guia ${index + 1} · tema`, 200, true), orientacao: text(item.orientacao, `Guia ${index + 1} · orientação`, 10000, true)}));
  return {name, goal_km: number(input.goal_km, 'Meta km', 1000), goal_minutes: number(input.goal_minutes, 'Meta minutos', 100000), goal_date, guide, sessions: sessions.sort((a, b) => a.date.localeCompare(b.date))};

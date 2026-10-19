@@ -247,3 +247,17 @@ test('publication review is labelled, keeps all content and restores focus to re
   h.failPublish=false;await h.click('#confirmAction');assert.equal(h.plans.find(p=>p.id==='p1').state,'archived');assert.equal(h.plans.find(p=>p.id==='p2').version,2);assert.equal(d.activeElement.id,'managementError');assert.equal(d.querySelector('.management-nav [aria-current=page]').dataset.page,'plans');
  }finally{await h.close();}
 });
+
+test('coach prescribes structured strength, publishes and revises without dropping IDs, text or exercises',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  await h.click('[data-page=plans]');await h.click('[data-plan=p1]');await h.click('[data-revise=p1]');
+  await h.click('[data-session-index="1"] [data-add-exercise]');
+  const prefix='[data-session-index="1"] [data-exercise-index="0"] ';
+  await h.input(prefix+'[data-strength-field=name]','<script>Exercício de teste</script>');await h.input(prefix+'[data-strength-field=sets]','3');await h.input(prefix+'[data-strength-field=reps]','10');await h.input(prefix+'[data-strength-field=load_kg]','12,5');
+  await h.submit();const exercise=h.drafts[0].document.sessions[1].strength[0];assert.equal(exercise.load_kg,12.5);assert.equal(exercise.id,'ex-1');assert.equal(h.drafts[0].document.sessions[0].strength,undefined);
+  await h.click('#reviewPublish');assert.match(d.querySelector('#managementDialog').textContent,/3 séries · 10 repetições · 12,5 kg/);assert.equal(d.querySelector('#managementDialog script'),null);await h.click('#confirmAction');
+  await h.click('[data-plan=p2]');await h.click('[data-revise=p2]');assert.equal(d.querySelector(prefix+'[data-strength-field=id]').value,'ex-1');
+  await h.click('[data-session-index="1"] [data-remove-exercise="0"]');await h.submit();assert.deepEqual(h.drafts.at(-1).document.sessions[1].strength,[]);assert.equal(h.plans.find(p=>p.id==='p2').atlas_sessions[1].strength[0].id,'ex-1');
+ }finally{await h.close();}
+});

@@ -1,3 +1,4 @@
+import {strengthPrescriptionHTML,strengthResultsHTML} from './strength.js';
 import {createManagement} from './management.js';
 import {safeNext} from './auth-client.js';
 import {createAvatarStore,createProfileEditor,initials} from './profile.js';
@@ -102,8 +103,10 @@ function workout(s){
  ${s.description?`<p class="workout-description preserve-lines">${esc(s.description)}</p>`:''}
  ${s.intensity?`<p class="workout-intensity">Intensidade: <strong>${esc(s.intensity)}</strong></p>`:''}
  ${s.gym?`<div class="workout-instructions"><h3>Complemento</h3><p class="preserve-lines">${esc(s.gym)}</p></div>`:''}
+ ${strengthPrescriptionHTML(s.strength,true)}
  ${s.notes?`<div class="workout-instructions"><h3>Observações</h3><p class="preserve-lines">${esc(s.notes)}</p></div>`:''}
  ${r?`<section class="workout-record" aria-label="Seu registro"><h3>Seu registro</h3><p class="status">${esc(r.status)}</p>${recorded?`<p class="muted">${recorded}</p>`:''}</section>`:''}
+ ${r?strengthResultsHTML(s.strength,r.strength):''}
  ${archived&&!r?'<p class="muted">Plano arquivado · novas atividades indisponíveis.</p>':`<button class="primary" data-record="${esc(s.id)}">${r?'Editar registro':'Registrar atividade'}</button>`}
  ${feedback(s.id).length?commentsHTML(feedback(s.id)):''}</article>`;
 }
