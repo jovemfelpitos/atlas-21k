@@ -1,6 +1,6 @@
 # UX-11 — corrida + musculação
 
-Execução autorizada em 19/10/2026, uma sprint por vez. Escolha do usuário: repetições e carga em cada série. Esta entrega encerra o ciclo técnico UX-07 a UX-11; não inicia biblioteca, equipes ou cobrança.
+Execução autorizada em 19/10/2026, uma sprint por vez. Escolha do usuário: repetições e carga em cada série. Último item do ciclo UX-07 a UX-11: implementação e preview concluídos; publicação em produção bloqueada por créditos do Netlify. Não inicia biblioteca, equipes ou cobrança.
 
 ## Entrega
 
@@ -45,4 +45,14 @@ Evidências locais ignoradas: `.artifacts/ux11-tests.tap`, `.artifacts/ux11-layo
 
 ## Publicação
 
-Migração aplicada e validação remota concluída. Publicação da interface em preparação pela integração Git existente, após conferir o preview. Atualizar esta seção com os commits e deploys confirmados.
+Migração aplicada e validação remota concluída. [PR #5](https://github.com/jovemfelpitos/atlas-21k/pull/5) integrado à `main` após preview conferido. Implementação `a71a595cb5185d84af920b9cecebcfd02ffcf4a7`; merge `3912ea4c2ad767e7a667d44b55975f4a7f2336be`.
+
+Preview `6ad62668806f9f16c668e84c`, estado `ready`, contexto `deploy-preview`, commit de implementação correto: https://deploy-preview-5--atlasrun.netlify.app . Novos módulos, módulos alterados, modelo híbrido, manuais, landing e rota `/app` responderam HTTP 200 e correspondem às fontes testadas; comparação normaliza finais de linha e retira somente o bloco de toolbar injetado pelo Netlify no HTML. `/entrar` respondeu HTTP 200; alertas desabilitados no preview.
+
+**Produção bloqueada em 19/10/2026 às 11:18 BRT:** deploy `6ad626b48f8f2a7e6983f33b` do merge correto foi marcado `skipped`, estado `error`, motivo literal **Skipped due to account credit usage exceeded**. O painel confirmou que os créditos operacionais mantêm sites existentes no ar, mas não permitem novos deploys de produção neste ciclo. Nenhum upgrade, pagamento, mudança de plano ou tentativa de contornar o limite foi feito.
+
+O site principal continua no deploy UX-10 `6ad60ea4fe2ce9457ce8327f`, commit `11392256b82e4e6f48d26cc6253fe9b6669f3924`. Runtime e páginas conferidos por HTTP 200, iguais à UX-10 após normalizar EOL e retirar somente o comentário de hospedagem e script público HUD injetados pelo Netlify. Configuração pública de alertas permanece habilitada com o mesmo hash de chave pública anterior à sprint. A migração já aplicada é compatível com esse frontend e não removeu dados/campos antigos.
+
+Para concluir: liberar capacidade de deploy na conta Netlify (créditos disponíveis ou renovação do ciclo), reexecutar o build da `main` e verificar estado `ready`, commit, arquivos e configuração de alertas em produção. Não reaplicar a migração e não tratar o preview como produção. Aceite físico Android/iPhone continua pendente.
+
+Evidências locais adicionais: `.artifacts/ux11-preservation.json`, `.artifacts/ux11-preview-checks.json` e `.artifacts/ux11-production-blocked.json`.
