@@ -1,2 +1,65 @@
 .management-nav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;margin:0 0 24px;border-bottom:1px solid var(--line)}.management-nav button{flex:1 0 auto;white-space:nowrap;font-size:14px}.management h2{margin-top:24px}.management h3{margin:22px 0 12px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.actions button{flex:1 1 150px}.team-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}.team-row span{min-width:0}.review-summary{padding:20px;background:var(--card);border:1px solid var(--line);border-radius:16px;margin:20px 0}.review-summary strong{font-size:20px}.session-preview{padding:14px;border-left:3px solid var(--lime);background:var(--card);margin:10px 0;border-radius:0 10px 10px 0}.session-preview h4{margin:0}.session-preview p:last-child{margin-bottom:0}.calendar-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:16px}.calendar-day{border:1px solid var(--line);padding:14px;border-radius:16px}.calendar-day h3{margin-top:0}.editor-session>summary{line-height:1.6}.editor-guide{display:block;margin:20px 0;padding:16px}.sticky-actions{position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--line);z-index:2}.preserve-lines{white-space:pre-wrap}.management dialog{max-width:700px}.management dialog h2{margin-top:0}.management button:focus-visible,.management input:focus-visible,.management textarea:focus-visible,.management select:focus-visible{outline:3px solid var(--lime);outline-offset:3px}.preview-banner{border:1px solid var(--lime);padding:16px;border-radius:14px}.preview-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.preview-controls label{flex:1 1 180px}.preview-controls button{margin-bottom:0}@media(max-width:500px){.team-row{align-items:flex-start;flex-direction:column}.management-nav button{flex:0 0 auto}.sticky-actions button{flex-basis:100%}.management .form-grid{grid-template-columns:1fr}}
 .comparison{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0}.comparison>div{min-width:0;border-left:2px solid var(--line);padding-left:12px}.comparison p{margin:8px 0}.comparison small,.staff-comment small{color:var(--muted);display:block}.staff-comments{border-top:1px solid var(--line);margin-top:22px;padding-top:4px}.staff-comment{border-left:3px solid var(--lime);padding:12px 16px;background:var(--card);margin:14px 0;border-radius:0 10px 10px 0}.staff-comment p{overflow-wrap:anywhere}.checkbox-label{display:flex;align-items:center;gap:10px}.checkbox-label input{width:auto}.weekly-summary h4{margin:0}.weekly-summary small{line-height:1.6}#monitorFilters{align-items:end}#filterError{grid-column:1/-1}@media(max-width:500px){.comparison{grid-template-columns:1fr}.management .card h3{overflow-wrap:anywhere}.staff-comment{padding:12px}}
+
+/* Coach workspace: visible sections and compact reading, using the shared tokens. */
+.management-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));overflow:visible;gap:6px;padding:0;border:0;margin:0 0 20px}
+.management-nav button{white-space:normal;border:1px solid var(--line);border-radius:12px;padding:10px 6px;font-size:12px;min-height:48px;overflow-wrap:anywhere}
+.management-nav button.active{border-color:var(--lime);background:var(--color-surface-subtle);color:var(--lime);font-weight:600}
+.management-body>h2{font-size:26px;line-height:1.3;letter-spacing:-.5px;margin:18px 0 12px;overflow-wrap:anywhere}
+.management :is(h2,h3,h4,summary,.review-summary strong){overflow-wrap:anywhere}
+.management .session-preview .tag{max-width:100%;overflow-wrap:anywhere;vertical-align:middle}
+.management-body h2:focus-visible,#monitorSessionsTitle:focus-visible,#managementError:focus-visible{outline:2px solid var(--lime);outline-offset:4px}
+.management .card h3{margin:0 0 8px}
+.management .card>.tag{margin-bottom:8px;font-size:12px}
+.management .card>p{margin:8px 0;font-size:14px}
+.management .management-caption{font-size:13px;color:var(--muted);line-height:1.7}
+.management #managementError:empty{display:none}
+.management .actions button.primary{margin:0;width:auto}
+.management .management-main-action{border:1px solid var(--color-border-control);font-weight:600}
+.management-athlete .actions{margin-bottom:0}
+.management-filters,.management-weekly,.management-preview{border:1px solid var(--line);background:var(--color-surface-subtle);padding:0 16px;margin:12px 0 18px}
+.management-filters>summary,.management-weekly>summary,.management-preview>summary{display:list-item;align-content:center;min-height:48px;font-size:13px;margin-left:16px;padding:10px 0}
+.management-filters form{margin-bottom:16px}
+.management .monitor-selection{font-size:13px;color:var(--muted);margin-bottom:12px}
+.monitor-overview{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.monitor-overview p{margin:0;font-size:13px;color:var(--muted)}
+.monitor-overview p+p{margin-top:8px}
+.monitor-overview strong{font-size:24px;color:var(--lime);margin-right:6px}
+.management-weekly .metrics{margin-top:8px}
+.monitor-values{margin:14px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-variant-numeric:tabular-nums}
+.monitor-values>div{min-width:0}
+.monitor-values dt{color:var(--muted);font-size:12px}
+.monitor-values dd{font-size:14px;margin:4px 0 0;overflow-wrap:anywhere}
+.monitor-session>button{border:1px solid var(--line);width:100%;text-align:left;font-size:13px;min-height:48px}
+.monitor-pagination button{font-size:13px;border:1px solid var(--line)}
+.management .management-comment-shortcut{display:block;border:1px solid var(--line);font-size:14px;margin:0 0 18px;min-height:48px}
+.management-comment-form{border:1px solid var(--line);border-radius:20px;background:var(--color-surface-subtle);padding:16px;margin:20px 0}
+.management-comment-form label{margin-top:0}
+.management-comment-form .muted{font-size:12px}
+.editor-session-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 10px}
+.management .editor-session-toolbar h3{margin:0}
+.editor-session-toolbar button{font-size:13px;border:1px solid var(--line)}
+.editor-jump{margin:8px 0 16px}
+.editor-session>summary{overflow-wrap:anywhere;min-height:48px}
+.editor-identity{background:transparent;border:1px solid var(--line);padding:0 12px;margin:14px 0}
+.editor-identity>summary{font-size:12px;align-content:center}
+.editor-identity input{font-size:14px}
+.management .sticky-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:12px 0 max(12px,env(safe-area-inset-bottom));margin-bottom:16px}
+.management .sticky-actions button{font-size:14px;padding:10px 8px;min-height:50px}
+.management .sticky-actions #reviewPublish{border:1px solid var(--line)}
+.management dialog{max-height:calc(100dvh - 24px)}
+.management-dialog-actions{position:sticky;bottom:-22px;background:var(--bg);border-top:1px solid var(--line);padding:12px 0 max(12px,env(safe-area-inset-bottom));margin-bottom:-12px}
+@media(max-width:600px){
+ .management-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .management-nav:not(:has([data-page=team])) button:last-child{grid-column:1/-1}
+ .management input,.management select,.management textarea{font-size:16px}
+ .management .form-grid{grid-template-columns:minmax(0,1fr)}
+ .management .card{padding:18px}
+ .management .actions{gap:8px}
+ .management .actions button{min-height:48px}
+ .management-athlete .actions button{flex-basis:100px;font-size:13px;padding:10px}
+ .management-dialog-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+ .management .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .management .metric strong{font-size:22px}
+ .management .metric span{font-size:12px}
+}
