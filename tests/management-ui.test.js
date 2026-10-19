@@ -188,3 +188,62 @@ test('a file import finishing after the private workspace closes cannot render t
   assert.equal(d.querySelector('#content').textContent,'');assert.equal(d.querySelector('#planEditor'),null);assert.equal(h.calls.some(c=>c.path.includes('atlas_save_draft')),false);
  }finally{release?.();await h.close();}
 });
+
+test('athlete search preserves the input and navigation; the list shortcut opens only that athlete',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  await h.click('[data-page=athletes]');const input=d.querySelector('#athleteSearch'),nav=d.querySelector('.management-nav');
+  await h.input('#athleteSearch','Mar');assert.equal(d.querySelector('#athleteSearch'),input);assert.equal(d.querySelector('.management-nav'),nav);assert.match(d.querySelector('#athleteCount').textContent,/1 atleta/);
+  await h.input('#athleteSearch','Sem resultado');assert.equal(d.querySelector('[data-athlete]'),null);assert.match(d.querySelector('#athleteCount').textContent,/0 atletas/);
+  await h.input('#athleteSearch','');await h.click('#athleteResults [data-monitor-athlete=a]');
+  assert.equal(d.querySelector('#monitorFilters').elements.athlete.value,'a');assert.match(d.querySelector('.monitor-selection').textContent,/Marina/);assert.equal(d.querySelector('.management-filters').open,false);
+  assert.equal(d.querySelector('.management-nav [aria-current=page]').dataset.page,'monitoring');assert.equal(d.activeElement,d.querySelector('.management-body h2'));
+  await h.click('[data-page=athletes]');await h.click('[data-athlete=a]');assert.equal(d.querySelector('.management-nav [aria-current=page]').dataset.page,'athletes');
+ }finally{await h.close();}
+});
+
+test('session pages keep complete totals and exact comment identity; returning and filters preserve the correct context',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  const base=h.plans[0].atlas_sessions[0];h.plans[0].atlas_sessions=Array.from({length:25},(_,i)=>({...base,id:'many-'+String(i).padStart(2,'0'),type:'Sessão '+i}));h.records[0].session_id='many-00';
+  await h.portal.load();h.portal.render();await h.click('[data-page=monitoring]');const reads=h.calls.length;
+  assert.equal(d.querySelectorAll('[data-inspect]').length,12);assert.match(d.querySelector('.monitor-overview').textContent,/1\/25/);
+  await h.click('[data-monitor-offset="12"]');assert.equal(d.querySelector('[data-inspect]').dataset.inspect,'12');assert.equal(d.activeElement.id,'monitorSessionsTitle');assert.equal(h.calls.length,reads);
+  await h.click('[data-monitor-offset="24"]');assert.equal(d.querySelectorAll('[data-inspect]').length,1);assert.equal(d.querySelector('[data-monitor-offset="36"]').disabled,true);
+  await h.click('[data-inspect="24"]');assert.match(d.querySelector('.management-body h2').textContent,/Sessão 24/);await h.click('[data-focus-comment]');assert.equal(d.activeElement,d.querySelector('#commentForm textarea'));
+  await h.input('#commentForm textarea','Orientação da última página');await h.submit('#commentForm');assert.equal(d.activeElement.id,'managementError');
+  assert.equal(h.calls.findLast(c=>c.path.includes('atlas_add_session_comment')).body.session,'many-24');
+  await h.click('[data-page=monitoring]');assert.equal(d.querySelector('[data-inspect]').dataset.inspect,'24');assert.match(d.querySelector('.monitor-overview').textContent,/1\/25/);
+  d.querySelector('#monitorFilters').elements.state.value='adaptado';await h.submit('#monitorFilters');assert.equal(d.querySelectorAll('[data-inspect]').length,1);assert.equal(d.querySelector('[data-inspect]').dataset.inspect,'0');assert.equal(d.querySelector('.monitor-pagination'),null);
+  assert.equal(d.activeElement.id,'monitorSessionsTitle');
+ }finally{await h.close();}
+});
+
+test('session jump, add/remove and preview preserve unsaved fields and hidden session IDs',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  await h.click('[data-page=plans]');await h.click('[data-plan=p1]');await h.click('[data-revise=p1]');
+  assert.equal(d.querySelector('.management-nav [aria-current=page]').dataset.page,'plans');
+  const first='Texto em edição <script>sem executar</script>';await h.input('[data-session-index="0"] [data-field=description]',first);
+  const jump=d.querySelector('#editorSessionJump');jump.value='1';jump.dispatchEvent(new h.w.Event('change',{bubbles:true}));await tick();
+  assert.equal(d.querySelector('[data-session-index="0"]').open,false);assert.equal(d.querySelector('[data-session-index="1"]').open,true);assert.equal(d.activeElement.dataset.field,'date');
+  await h.input('[data-session-index="1"] [data-field=minutes]','');await h.click('#addSession');assert.equal(d.querySelector('[data-session-index="2"]').open,true);assert.equal(d.activeElement.closest('.editor-session').dataset.sessionIndex,'2');
+  await h.click('[data-remove-session="2"]');assert.equal(d.querySelectorAll('.editor-session').length,2);
+  assert.equal(d.querySelector('[data-session-index="0"] [data-field=description]').value,first);assert.equal(d.querySelector('[data-session-index="1"] [data-field=km]').value,'0');assert.equal(d.querySelector('[data-session-index="1"] [data-field=minutes]').value,'');
+  assert.equal(d.querySelector('.management-preview').open,false);await h.click('.management-preview>summary');assert.equal(d.querySelector('.management-preview').open,true);assert.match(d.querySelector('#preview').textContent,/<script>sem executar/);assert.equal(d.querySelector('#preview script'),null);
+  await h.click('[data-preview=calendar]');assert.equal(d.querySelector('.management-preview').open,true);assert.equal(d.activeElement.dataset.preview,'calendar');
+  await h.submit();assert.equal(d.activeElement.id,'draftState');assert.equal(h.drafts[0].document.sessions[0].description,first);assert.equal(h.drafts[0].document.sessions[1].id,'sessao-002');assert.equal(h.drafts[0].document.sessions[1].km,0);assert.equal(h.drafts[0].document.sessions[1].minutes,null);
+  assert.equal(h.plans[0].state,'published');assert.notEqual(h.plans[0].atlas_sessions[0].description,first);
+ }finally{await h.close();}
+});
+
+test('publication review is labelled, keeps all content and restores focus to recoverable errors',async()=>{
+ const h=await harness('coach'),d=h.w.document;
+ try{
+  await h.click('[data-page=plans]');await h.click('[data-plan=p1]');await h.click('[data-revise=p1]');await h.submit();await h.click('#reviewPublish');
+  assert.equal(d.querySelector('#managementDialog').getAttribute('aria-labelledby'),'managementDialogTitle');assert.match(d.querySelector('#managementDialog').textContent,/sessao-001/);assert.match(d.querySelector('#managementDialog').textContent,/sessao-002/);assert.match(d.querySelector('#managementDialog').textContent,/Guia completo/);
+  assert.equal(h.calls.some(c=>c.path.includes('atlas_publish_draft')),false);
+  h.failPublish=true;await h.click('#confirmAction');assert.equal(d.activeElement.id,'actionError');assert.equal(d.querySelector('#confirmAction').disabled,false);assert.equal(d.querySelector('#managementDialog').open,true);assert.equal(h.plans[0].state,'published');
+  h.failPublish=false;await h.click('#confirmAction');assert.equal(h.plans.find(p=>p.id==='p1').state,'archived');assert.equal(h.plans.find(p=>p.id==='p2').version,2);assert.equal(d.activeElement.id,'managementError');assert.equal(d.querySelector('.management-nav [aria-current=page]').dataset.page,'plans');
+ }finally{await h.close();}
+});
