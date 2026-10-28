@@ -6,6 +6,8 @@ Aplicação web para organizar planos de treino e acompanhar sua execução. Tre
 
 [Site publicado](https://atlasrun.netlify.app/) · [Manual de uso](GESTAO.md) · [Testes](tests/) · [Histórico de entregas](HISTORICO.md)
 
+**Estado:** em desenvolvimento, com versão publicada e recursos em preview.
+
 ## O que o sistema faz
 
 - Uma conta com áreas de atleta e treinador.
@@ -18,9 +20,29 @@ Aplicação web para organizar planos de treino e acompanhar sua execução. Tre
 
 ## Conheça a interface
 
-![Apresentação do Atlas Run com exemplo fictício](docs/images/atlas-run-landing.jpg)
+![Atlas Run — desktop](docs/images/atlas-desktop.jpg)
 
-A prévia da página inicial usa um exemplo fictício. Os dados da aplicação autenticada dependem da conta e dos vínculos autorizados.
+Capturas locais da página inicial. O cartão de treino é uma prévia ilustrativa com exemplo fictício.
+
+<details>
+<summary>Ver no celular</summary>
+
+Captura da interface no celular.
+
+<img src="docs/images/atlas-mobile.jpg" alt="Atlas Run — celular" width="320">
+
+</details>
+
+<details>
+<summary>Ver calendário e relato de musculação</summary>
+
+Prévias de desenvolvimento com exemplos sintéticos. São registros das respectivas etapas de interface, sem representar uma única versão publicada.
+
+![Calendário em uma prévia local da UX-04](docs/images/atlas-calendar.jpg)
+
+<img src="docs/images/atlas-strength-mobile.png" alt="Relato de musculação da UX-11 com exercício fictício" width="320">
+
+</details>
 
 **Versão publicada:** o último registro de publicação, em 19/10/2026, informa que o site principal está na UX-10. A UX-11 de musculação foi integrada ao código e conferida em preview, mas seu deploy de produção ficou bloqueado por créditos da hospedagem. Consulte [o registro de publicação](docs/UX11-HIBRIDO.md#publicação) para os detalhes; o link do site não representa uma confirmação de que todos os recursos da `main` estão em produção.
 
