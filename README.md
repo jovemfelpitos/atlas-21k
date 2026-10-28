@@ -1,73 +1,93 @@
 # Atlas Run
 
-UX-10 publicada e conferida em produção em 19/10/2026: gestão adaptada ao celular, navegação visível, acompanhamento direto do atleta, sessões em páginas locais com totais completos, atalhos de comentário e edição/revisão mais compactas. 147/147 testes aprovados; build de 74 arquivos públicos; sem alteração de banco, permissões ou alertas. Critérios e limites em [docs/UX10-TREINADOR-MOBILE.md](docs/UX10-TREINADOR-MOBILE.md). Próxima: UX-11, corrida + musculação.
+Aplicação web para organizar planos de treino e acompanhar sua execução. Treinadores criam ou importam planos, revisam antes de publicar e acompanham os relatos dos atletas.
 
-UX-09 publicada e conferida em produção em 17/10/2026: Evolução por semana com previsto/realizado, distância, duração e pace ponderado, cobertura dos valores e relatos/comentários da semana. Mantém vazio distinto de zero, versões isoladas e proteção do registro. 143/143 testes aprovados; build de 74 arquivos públicos; nenhuma migration ou escrita real. Detalhes e validação em [docs/UX09-EVOLUCAO.md](docs/UX09-EVOLUCAO.md). Próxima: UX-10, treinador no celular.
+**JavaScript (ES modules) · PostgreSQL · Supabase · Node.js · Netlify**
 
-UX-08 publicada em 16/10/2026 e conferida em produção em 17/10/2026: troca de área com menos esperas de rede, carregamento/falha recuperáveis, confirmação da preferência e avatar reutilizado somente em memória. 135/135 testes aprovados, com revalidação de acesso e proteção dos formulários preservadas. Arquivos publicados correspondem às fontes testadas; configuração dos alertas preservada. Medição fictícia com 100 ms por request: cerca de 550–650 ms para 220–240 ms; não representa latência medida em produção. Detalhes, commit e deploy em [docs/UX08-MOBILE.md](docs/UX08-MOBILE.md). Próxima: UX-09, evolução do atleta.
+[Site publicado](https://atlasrun.netlify.app/) · [Manual de uso](GESTAO.md) · [Testes](tests/) · [Histórico de entregas](HISTORICO.md)
 
-UX-07 publicada em 16/10/2026: identidade oficial/Sora, interface mobile e registrador dinâmico já aprovados, com alertas opcionais por aparelho. Migration aditiva aplicada e permissões verificadas no banco remoto; cinco perfis, três planos, 45 sessões e dez registros preservados. 124/124 testes locais; build com 72 arquivos públicos; configuração pública e execução real do dispatcher verificadas em produção, sem aparelhos inscritos/envios. Segredos ficam no Netlify e o build não os injeta no cliente. **Aceite físico em Android/iPhone pendente**. Publicação, configuração e roteiro: [docs/UX07-PUBLICACAO.md](docs/UX07-PUBLICACAO.md). A sequência aprovada é UX-08 (fluidez), UX-09 (evolução), UX-10 (treinador mobile) e UX-11 (corrida + musculação), uma por vez. Os registros datados abaixo descrevem entregas anteriores.
+## O que o sistema faz
 
-Correção do Perfil em 15/10/2026: consulta sem formulários de credenciais escondidos; **Editar dados pessoais**, **Alterar e-mail** e **Alterar senha** abrem somente a edição escolhida. Salvar retorna à consulta; **Cancelar edição** descarta apenas essa ação. Senha atual ou e-mail atual preenchidos automaticamente não criam pendência; alterações reais continuam protegidas. Navegação, sincronização e saída verificadas nas três áreas, com 79 testes locais aprovados e conferência em navegador com dados fictícios em 320/390/768 px e desktop. Nenhuma migração ou escrita em contas reais.
+- Uma conta com áreas de atleta e treinador.
+- Importação de planos em CSV, com validação antes da publicação.
+- Rascunhos, revisão e versões de planos, preservando o histórico.
+- Calendário e registro de execução por sessão.
+- Acompanhamento do previsto versus realizado e comentários da equipe.
+- Controle de acesso por papel e vínculo entre treinador e atleta.
+- No código atual: prescrição de musculação e relato de repetições e carga por série.
 
-UX-06 concluída para o piloto em 15/10/2026, por aceite do dono: proteção da tela privada ao sair/trocar de conta em outra aba, cancelamento de requisições e recusa de respostas atrasadas; importação que termina após encerrar a gestão não reconstrói a tela anterior. Ajuda pública em `/ajuda`, com links na apresentação, acesso e app. Dois planos fictícios autorizados foram publicados separados do plano original, preservando suas 39 sessões e os dois registros existentes no início desta sprint. Nenhum vínculo novo ou migração.
+## Conheça a interface
 
-Validação técnica UX-06: 74 testes locais; sete verificações de permissões no banco remoto em transação revertida; navegador local entre abas e ajuda em 320/390/768 px/desktop. Build de 30 arquivos públicos. Em 15/10, o dono aprovou os passos básicos de A, B, troca de área e consulta administrativa no celular/computador. O banco confirmou um relato em cada plano de teste, com variações do roteiro documentadas. O dono também confirmou troca de senha no computador e no celular e solicitou encerrar a sprint. Demora na troca de área foi aceita como melhoria; causa ainda não medida. Sincronização, e-mail e demais testes complementares não realizados seguem no backlog. Evidências, aceite, limites e priorização para as antigas sprints 5/6/7 em [PILOTO-UX06.md](PILOTO-UX06.md).
+![Apresentação do Atlas Run com exemplo fictício](docs/images/atlas-run-landing.jpg)
 
-UX-05 entregue em 14/10/2026: registro com contexto da sessão/versão, situação obrigatória Feito/Adaptado/Não feito e demais campos opcionais. Distância e tempo aceitam vírgula ou ponto. Esforço e dor têm explicações visíveis, ajuda expansível e seletores de 0 a 10 com Não informei; vazio continua null, zero exige escolha explícita. Editar preserva valores, inclusive zero e recuperação anterior; mudar a situação não apaga resultados. Não feito pode ser salvo só com um motivo opcional. Campos não salvos pedem descarte ao fechar, inclusive Escape, e bloqueiam navegação/sincronização/troca de área. Salvamento confirma a representação retornada pelo banco e usa leitura prévia/edição condicional para recusar conflito; uma resposta perdida pode ser conferida em nova tentativa, sem duplicar a atividade. Sem fila offline ou mudança da prescrição/comentários.
+A prévia da página inicial usa um exemplo fictício. Os dados da aplicação autenticada dependem da conta e dos vínculos autorizados.
 
-Validação UX-05: 66 testes passaram, incluindo valores vazios/zero no PostgreSQL, escalas, edição, falha/reenvio, alteração em outro dispositivo simulada e proteção de rascunho. Navegador local em 320/390/768 px e desktop, com dados fictícios; registro com vírgula e perda de resposta após gravação conferidos. Leitura remota confirmou cinco perfis, um plano, 39 sessões, uma atividade e as restrições numéricas existentes; nenhuma escrita/migração no banco remoto. Build público de 29 arquivos. Próxima: UX-06, piloto com contas/dispositivos reais e decisão sobre as antigas sprints 5/6/7.
+**Versão publicada:** o último registro de publicação, em 19/10/2026, informa que o site principal está na UX-10. A UX-11 de musculação foi integrada ao código e conferida em preview, mas seu deploy de produção ficou bloqueado por créditos da hospedagem. Consulte [o registro de publicação](docs/UX11-HIBRIDO.md#publicação) para os detalhes; o link do site não representa uma confirmação de que todos os recursos da `main` estão em produção.
 
-UX-04 entregue em 14/10/2026: calendário mensal com seleção de dia, navegação entre meses/anos, Hoje e acesso à sessão mais próxima; Agenda mantém todas as datas do plano. Filtros Todas, Realizadas (feito + adaptado), Sem registro e Não feitas (relato explícito), com texto, símbolos e contagens. Várias sessões na mesma data são preservadas. Estado de mês/dia/filtro permanece ao salvar um registro e é independente por versão do plano. Dono e treinador consultam o mesmo calendário em **Ver calendário** nos planos autorizados e abrem relatos/comentários sem editar atividades. Corrigido o seletor de área que podia permanecer bloqueado após salvar um relato.
+## Executar localmente
 
-Validação UX-04: 56 testes passaram, incluindo regressão de RLS, ano bissexto, virada de mês/ano, duas sessões no mesmo dia, filtros, histórico com IDs de sessão repetidos, retorno do comentário para o calendário e isolamento da área pessoal do treinador. Navegador local em 320/390 px, sem rolagem horizontal, com registro e consulta usando dados fictícios. Build público de 27 arquivos, sem fixtures/fontes privadas. Nenhuma migração ou escrita no banco remoto nesta sprint. Próxima: UX-05, explicações e revisão do registro de atividade; a validação completa em contas/dispositivos reais permanece em UX-06.
+Requisitos: **Node.js 22** e **Python 3.11 ou superior**.
 
-UX-03 entregue em 14/10/2026: perfil comum às três áreas, com nome, nascimento opcional, dias disponíveis e foto privada; alteração de e-mail com senha atual e confirmação nos dois endereços; senha nova com repetição e senha atual exigida pelo Supabase. Campos não salvos bloqueiam troca de área/sincronização/saída até salvar ou descartar. Migração `atlas_run_ux03_profile_and_private_avatars` aplicada, arquivo `supabase/migrations/20261014175821_atlas_run_ux03_profile_and_private_avatars.sql`. Bucket `atlas-avatars` privado, JPEG de até 512 KiB; o navegador valida JPG/PNG/WebP até 8 MiB e prepara um JPEG quadrado de até 640 px, sem preservar metadados do arquivo original. Acesso de leitura acompanha os vínculos do perfil; gravação/remoção são exclusivas do titular. O app busca fotos com autorização e mantém URLs de blob somente em memória, sem URLs públicas ou assinadas persistidas.
+```bash
+git clone https://github.com/jovemfelpitos/atlas-21k.git
+cd atlas-21k
+npm ci
+npm start
+```
 
-Validação UX-03: 50 testes locais; perfis atleta/treinador compartilhados, falhas e proteção de campos não salvos, credenciais/retorno parcial de e-mail, imagens e RLS de fotos/nascimento. No banco remoto, uma transação revertida confirmou escrita do nascimento próprio, recusa de data futura e ausência de privilégio de admin; cinco perfis, um plano, 39 sessões e uma atividade preservados. Bucket e políticas conferidos, sem novo alerta de segurança. Interface em 320/390 px sem rolagem lateral e conversão real de PNG para JPEG no navegador. Alterações de credenciais foram testadas com respostas simuladas; o agente não alterou senhas/e-mails reais. A matriz completa entre contas/dispositivos e mudanças de credenciais continua em UX-06.
+Abra **http://127.0.0.1:4173**. O comando constrói e serve somente a pasta pública `dist/`, com as rotas definidas em `netlify.toml`.
 
-UX-02 entregue em 14/10/2026: landing pública em `/`, login em `/entrar`, cadastro completo em `/criar-conta`, confirmação/reenvio, recuperação e redefinição em telas próprias; app autenticado em `/app`. O formulário inicial escolhe atleta/treinador; o comando protegido de onboarding é idempotente e mantém as preferências das contas existentes. Migração `atlas_run_ux02_initial_account_area` aplicada, fonte em `supabase/migrations/20261014122932_atlas_run_ux02_initial_account_area.sql`. **SMTP Brevo e modelos ativos, confirmação/recuperação entregues e links validados pelo dono, com entrada de nova conta como treinador**. Leitura sob o papel real da nova conta confirmou isolamento dos planos e relatos alheios. Registro do piloto em [EMAILS-PILOTO.md](EMAILS-PILOTO.md).
+A página inicial e a ajuda podem ser consultadas sem login. A aplicação autenticada usa o backend configurado em `config.js`: clonar o repositório não cria um banco independente. Para usar contas e dados próprios, configure outro projeto conforme [o guia de instalação](HISTORICO.md#configurar-outro-projeto-referência). Os testes abaixo funcionam sem credenciais de produção.
 
-`npm start` constrói e serve somente `dist`, em 127.0.0.1:4173, com as rotas do Netlify lidas de netlify.toml. O build atual tem 72 arquivos públicos; SQL, funções de servidor, templates SMTP, testes e configuração privada não são publicados como arquivos estáticos. A demonstração visual da landing é fictícia e não escreve atividades. As contagens das suítes nas notas datadas registram versões anteriores. As prévias locais de gestão/perfil usam fixtures e não fazem parte do servidor do build público.
+## Testes e build
 
-UX-01 implementada: uma conta com áreas atleta/treinador, **Trocar área**, ativação sem perder histórico e lista **Usuários** exclusiva do dono. Perfil é provisionado no cadastro e regularizado no primeiro acesso. Migração aplicada: `atlas_run_ux01_accounts_and_areas`, fonte em [supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql](supabase/migrations/20261013205525_atlas_run_ux01_accounts_and_areas.sql). Não reaplique no projeto existente. A leitura do dono retornou quatro contas; o teste de promoção em transação revertida preservou plano/atividade e negou privilégio admin/prescrição para si. 30 testes locais passaram; upgrade remoto manteve um plano, 39 sessões e uma atividade. Manual atualizado: [GESTAO.md](GESTAO.md).
+```bash
+npm test
+npm run build
+```
 
-[Planejamento de UX-02 a UX-06](PLANEJAMENTO-UX.md): landing/acesso separados, escolha inicial de área, recuperação, SMTP próprio, perfil completo, calendário mensal, registro explicado e piloto. O roteiro original 5/6/7 fica para reavaliação ao final do ciclo. As seções 0 a 4 abaixo registram a base anterior; suas referências à exclusividade de perfis foram substituídas por UX-01. Permissões dependem de papéis e vínculos no banco; a preferência de área só define navegação.
+A suíte usa o test runner nativo do Node.js, Happy DOM e PostgreSQL local em memória via PGlite. Entre os cenários cobertos:
 
-Repositório jovemfelpitos/atlas-21k. Produção: https://atlasrun.netlify.app/. O Netlify publica a branch main; `npm run build` gera dist com uma lista explícita de arquivos públicos, sem SQL, ferramentas ou testes. Execute `npm start` e abra http://127.0.0.1:4173. Para testes, `npm ci` e `npm test`: parser CSV, fluxos com respostas simuladas e RLS em PostgreSQL local (PGlite). `web-push` é uma dependência exclusiva das funções de servidor; PGlite/happy-dom são de desenvolvimento. A demonstração oferece plano anterior e registros temporários em memória, perdidos ao atualizar. Nenhum treino usa localStorage como banco; apenas a sessão de autenticação é mantida no navegador.
+- CSV com aspas, múltiplas linhas, vírgula decimal e dados inválidos;
+- permissões entre contas, vínculos revogados e acesso aos planos;
+- rascunhos, publicação, preservação de versões e conflitos de edição;
+- calendário, valores vazios versus zero e registros de musculação.
 
-## Supabase configurado
+O workflow [CI](.github/workflows/ci.yml) executa instalação pelo lockfile, testes e build nos pushes para `main`, nos pull requests e por execução manual. A tarefa usa permissões de leitura e não faz deploy nem executa scripts de validação contra o banco remoto.
 
-Projeto `atlasrun`, ref `acmzbjynzsutwdrbvxuw`, região `us-east-1`, organização jovemfelpitos's Org no plano Free. `schema-v2.sql` foi aplicado como migração `atlas_run_accounts_plans_and_activity_records`. `schema-v3.sql` foi aplicado como migração `atlas_run_owner_coaches_drafts_and_plan_versions`, com treinadores, vínculos, rascunhos e eventos de publicação. schema-v4.sql adiciona leitura de atividades para a gestão autorizada e comentários separados. Foi aplicado em três migrações: atlas_run_sprint4_comments_storage, atlas_run_sprint4_comments_command e atlas_run_sprint4_monitoring_access (o conector rejeitou o envio único; todas as etapas foram verificadas). As dez tabelas têm RLS ativo e acesso anônimo revogado. As regras de admin verificam explicitamente o UUID autenticado. Não execute o schema novamente nesse projeto. `config.js` contém somente URL e chave publishable pública.
+## Organização do código
 
-Auth: cadastro e e-mail/senha ativos, confirmação de e-mail mantida e senha mínima do serviço em 8 caracteres. Site URL `https://atlasrun.netlify.app`, redirecionamentos permitidos `https://atlasrun.netlify.app/**` e `http://127.0.0.1:4173/**`. O app valida os tokens recebidos após confirmação e os remove da URL. SMTP próprio Brevo ativo com modelos de confirmação/recuperação em português; os dois e-mails foram entregues e os links validados pelo dono. O piloto sem domínio próprio usa remetente técnico `brevosend.com`. Não foi desativada a confirmação de e-mail.
+| Caminho | Responsabilidade |
+| --- | --- |
+| `importer.js` | Leitura de CSV e validação da entrada do plano |
+| `plan-editor.js` | Contrato do plano e edição de prescrições |
+| `management.js` | Gestão de atletas, rascunhos e publicação |
+| `calendar.js`, `activity.js`, `strength.js` | Consulta de sessões e registro do atleta |
+| `monitoring.js`, `progress.js` | Acompanhamento e evolução |
+| `auth-*.js`, `account-areas.js`, `profile.js` | Acesso, áreas da conta e perfil |
+| `supabase/migrations/` | Evolução versionada do banco |
+| `netlify/functions/` | Funções de servidor |
+| `tests/` | Testes de comportamento, interface e banco local |
+| `tools/build-site.js` | Lista explícita dos arquivos do build público |
 
-`node tools/check-api.js` confirmou Auth HTTP 200 e bloqueio de acesso anônimo aos planos (401). Os 25 testes locais incluem RLS em PostgreSQL, fluxos simulados e retorno da confirmação de e-mail. A conta de atleta está confirmada, há login real registrado no Auth e um registro de atividade persistido, vinculado corretamente ao atleta, ao plano e à sessão. Foram atribuídas as 39 sessões e o guia do plano histórico como referência, com datas preservadas e prova não confirmada. Nenhum resultado esportivo foi inserido pelo bootstrap. `plano-anterior-referencia.csv` permite importar essa mesma referência pela área de gestão como um rascunho, antes da publicação. A conta separada de admin dono indicada pelo usuário está confirmada e foi ativada; a conta de atleta foi preservada.
+## Decisões técnicas
 
-O advisor não apontou problemas nas tabelas/RLS. Após o uso do Auth, apontou proteção contra senhas vazadas desativada; esse recurso exige plano Pro ou superior e não foi contratado: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . Não foi feito upgrade. As suítes transacionais `tests/remote-rls.sql` e `tests/remote-management.sql` não puderam ser concluídas pelo conector por erro `Invalid or expired requestState`; o isolamento foi testado no PostgreSQL local e as permissões/RLS foram inspecionadas no banco real. O contexto da conta real do dono confirmou papel admin, acesso ao plano e, após a sprint 4, leitura de 1 relato com tentativa de edição afetando 0 linhas. O comando de comentário foi verificado sob esse contexto com autoria/papel corretos, em transação revertida; nenhum comentário de teste persistiu. A tentativa de suíte remota não deixou usuários de teste persistidos. O upgrade manteve 1 plano, 39 sessões e 1 registro de atividade. Na UX-02, a conta de teste criada pelo dono foi confirmada e entrou como treinador; uma leitura real sob seu papel retornou somente seu perfil e nenhum plano/relato alheio. A matriz completa entre contas/dispositivos segue em UX-06.
+**Frontend modular em JavaScript:** módulos nativos para separar as responsabilidades, com build que copia apenas os arquivos públicos previstos.
 
-## Configurar outro projeto (referência)
+**Autorização no banco:** papéis e vínculos delimitam o acesso; a escolha de área na interface não concede permissões.
 
-1. Confirme qual é o projeto correto; não reutilize projeto antigo por suposição. Para uma instalação nova, execute `schema-v2.sql`, `schema-v3.sql`, `schema-v4.sql` e a migração UX-01 acima, nessa ordem, uma vez. É uma instalação aditiva: não remove atlas_records nem seus registros antigos. Estes não são migrados automaticamente, porque não têm identificação de plano/sessão confiável. O schema.sql antigo permanece como referência histórica.
-2. Preencha config.js com URL do projeto e chave publishable ou anon pública. Nunca use secret/service_role. Habilite e-mail/senha e confirmação de e-mail. Configure URL de autenticação para o endereço local durante os testes.
-3. Crie a conta do atleta, confirme e-mail, entre e salve nome/dias no Perfil. Crie uma conta separada com outro e-mail para administração, entre uma vez para criar o perfil e saia.
-4. Somente no SQL Editor, conceda admin à segunda conta, usando seu UUID confirmado: `insert into public.atlas_admins(user_id) values ('UUID-DO-ADMIN');`. Crie o perfil antes de conceder esse acesso. Um trigger atualiza o sinalizador de exibição do perfil. A tabela de autorização não permite insert/update pelo frontend. O booleano do perfil não dá privilégios. Não promova a conta de atleta.
-5. Entre como dono, gerencie treinadores e vínculos em Usuários/Atletas. Entre como dono ou treinador, selecione atleta, importe CSV, confira a prévia, salve rascunho, revise e publique. Troque para a área Atleta para visualizar seus próprios planos e registrar atividades. Preferências não remanejam datas. Vários planos são preservados.
+**Publicação versionada:** rascunhos e planos publicados têm fluxos separados, permitindo preservar sessões e relatos das versões anteriores.
 
-## Validação externa obrigatória
+**Validação em duas camadas:** a importação verifica estrutura e conteúdo antes da publicação; o banco também impõe as restrições do domínio.
 
-Login real, confirmação de e-mail e persistência foram confirmados no projeto novo. O teste em dois dispositivos e a verificação entre duas contas reais de atletas e uma admin permanecem pendentes: A não deve ler/editar planos ou registros de B; atleta não deve importar nem se promover; admin não deve registrar atividades; uma importação inválida não deve criar plano parcial. A opção de sincronização atualiza sob demanda, sem Realtime. O teste local com falha de rede confirmou que o formulário permanece preenchido, sem fila offline. A publicação usa o mesmo projeto Supabase configurado nos testes locais.
+## Documentação
 
-Exportação JSON reúne todos os planos carregados, metas, guia, registros e comentários da equipe, excluindo identificadores de usuários/autores, senha e tokens. Envie manualmente ao GPT. Modelo e prompt: IMPORTACAO.md. Plano e guia antigos estão em legacy-plan.js e legacy-guide.js, rotulados como referência; prova de 15/11/2026 não confirmada.
+- [Manual de gestão](GESTAO.md)
+- [Formato e importação de planos](IMPORTACAO.md)
+- [Escopo e matriz de permissões](SPRINTS.md)
+- [Musculação: implementação e limites de publicação](docs/UX11-HIBRIDO.md)
+- [Histórico completo de entregas e instalação](HISTORICO.md)
 
-Base técnica: https://supabase.com/docs/guides/database/postgres/row-level-security , https://supabase.com/docs/reference/javascript/auth-signinwithpassword e https://supabase.com/docs/guides/auth/auth-smtp . RLS e chaves compostas restringem propriedade e vínculo atleta/plano/sessão. Rascunhos usam SECURITY INVOKER e RLS. Publicação e arquivamento usam comandos restritos em atlas_private, com SECURITY DEFINER, search_path vazio e verificação explícita de auth.uid()/vínculo. Os wrappers públicos são INVOKER. O cliente não tem INSERT/UPDATE/DELETE em planos/sessões publicados; isso preserva os snapshots e impede edição direta das prescrições já publicadas. O backend novo foi criado com autorização; o projeto antigo não foi alterado. O frontend de produção usa somente a chave pública do projeto.
+## Limites conhecidos
 
-## Gestão — sprints 0 a 4
-
-UX-11 acrescenta musculação estruturada no mesmo plano de corrida, em sessões distintas. O treinador prescreve exercícios/séries; o atleta relata repetições e carga por série. Histórico, texto antigo de musculação, permissões e versões preservados. Modelo híbrido e instruções em IMPORTACAO.md; contratos, migração e validação em [docs/UX11-HIBRIDO.md](docs/UX11-HIBRIDO.md). Para novas instalações, aplicar também as migrações posteriores de conta/perfil/notificações e a migração híbrida em ordem; não reaplicar arquivos já executados apenas por diferença de timestamp entre CLI e conector.
-
-Escopo, fluxos e matriz de permissões em SPRINTS.md. Manual de uso em GESTAO.md. Acesso exclusivo por conta: atleta, treinador e admin dono. Treinadores inativos ou sem vínculo não acessam planos/rascunhos de atletas. Rascunhos não aparecem para atletas. Revisar um plano gera uma nova versão e arquiva a anterior, mantendo sessões e registros. Vários planos independentes publicados podem coexistir; o mais recente publicado é exibido primeiro. Registros de versões arquivadas podem ser corrigidos pelo próprio atleta via PATCH; novos registros ficam bloqueados.
-
-Prévia local com dados fictícios e sem Supabase: http://127.0.0.1:4173/tools/management-preview.html. A prévia e suas fixtures não entram no build público. `tests/management-database.test.js` testa o upgrade, dois treinadores, permissões, conflitos de revisão, publicação, revogação e preservação de atividades no PostgreSQL. `tests/management-ui.test.js` testa importação, erros de rede, edição, revisão completa, confirmação de destinatário, duplicação e preservação de campos. A interface foi conferida no navegador em tela de 390 px.
-
-Acompanhamento já disponível na sprint 4: filtros, prescrito versus realizado, resumo semanal, ausência de registros e comentários imutáveis separados do atleta. A gestão tem leitura dos relatos; somente o atleta os edita. Revogar vínculo ou desativar treinador retira leitura e envio de comentários no banco. tests/monitoring-database.test.js verifica upgrade, autoria, tentativas de alteração/upsert, revogação, histórico e reenvio; tests/monitoring.test.js verifica datas, valores ausentes/zero, versões e paginação. Interface e exportação de comentários também têm cobertura. Biblioteca, múltiplas equipes e cobrança pertencem às sprints seguintes. O dono cadastra treinadores a partir de contas já existentes; convites e SMTP para usuários externos ficam no ciclo de expansão.
+O aceite físico de instalação e alertas em Android/iPhone permanece pendente nos registros do projeto. Testes locais e conferências em navegador não equivalem a esse aceite. Biblioteca de exercícios, múltiplas equipes e cobrança não fazem parte deste escopo.
